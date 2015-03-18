@@ -81,7 +81,7 @@ $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -ls /data
 # It can be regenerated as follows:
 # reconstitutedObj <- eval(parse(text=storedObj))
 
-# Design for KAMILA: 
+# Design for k-means: 
 # input csv dataset, no cluster memberships, and RData file with initial centers
 # Map step: each data row is assigned a cluster
 #	output: <k \t csv data row>
