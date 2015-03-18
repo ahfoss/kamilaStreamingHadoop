@@ -29,12 +29,6 @@ while(length(line <- readLines(f,n=1)) > 0) {
   } else {
     if (last_key!=Inf) {
       logClusterInfo(last_key,running_total/clustCount)
-      #cat(
-      #  last_key
-      # ,'\t'
-      # ,paste(running_total/clustCount,collapse=',')
-      # ,'\n'
-      #)
     }
     running_total <- value
     clustCount <- 1
@@ -45,12 +39,6 @@ while(length(line <- readLines(f,n=1)) > 0) {
 
 if (last_key == this_key) {
   logClusterInfo(last_key,running_total/clustCount)
-  #cat(
-  #  last_key
-  # ,'\t'
-  # ,paste(running_total/clustCount,collapse=',')
-  # ,'\n'
-  #)
 }
 
 
