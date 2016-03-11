@@ -21,3 +21,4 @@ summary map-reduce run to obtain:
   - counts for each cluster
   - summary statistics (objective function value, within to between SS, etc)
 Outer loop of repeated k-means runs with random initialized centroids
+Clean up code into subfolders etc.
