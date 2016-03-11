@@ -1,4 +1,6 @@
-#!/usr/bin/env Rscript
+#!/util/academic/R/R-3.0.0/bin/Rscript
+
+# convert output from reducing step (means formatted as plaintext parsed R objects) into actual R object
 
 f <- file("stdin")
 open(f)

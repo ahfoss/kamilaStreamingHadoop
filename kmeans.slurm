@@ -1,14 +1,15 @@
 #!/bin/bash
 #SBATCH --partition=general-compute
-#SBATCH --time=20:45:00
+##SBATCH --partition=debug
+#SBATCH --time=10:50:00
 
-#SBATCH --nodes=4
+#SBATCH --nodes=2
 #SBATCH --ntasks-per-node=12
-#SBATCH --constraint=CPU-E5645
+##SBATCH --constraint=CPU-E5645
 ## --exclusive allocates the entire node for this job
 #SBATCH --exclusive
 
-#SBATCH --job-name="k5g4x12"
+#SBATCH --job-name="hadoopKM"
 #SBATCH --output=test-%J.out
 #SBATCH --mail-user=ahfoss@buffalo.edu
 #SBATCH --mail-type=ALL
@@ -36,6 +37,12 @@ module load myhadoop/0.30b
 module load R/3.0.0
 module list
 
+# User-specified values
+DATANAME=clust1GB.csv # file to be clustered
+
+################
+# should be less than or equal to the # clusters
+NUMTASKS=4
 
 export RBIN_HOME="/util/academic/R/R-3.0.0/bin"
 echo "RBIN_HOME="$RBIN_HOME
@@ -52,6 +59,24 @@ echo "MH_SCRATCH_DIR="$MH_SCRATCH_DIR
 # Make sure that this is accessible to all nodes
 export HADOOP_CONF_DIR=$SLURM_SUBMIT_DIR/config-$SLURM_JOBID
 echo "MyHadoop config directory="$HADOOP_CONF_DIR
+
+# Test that the number of nodes <= number of clusters
+NUMCLUST=`"$RBIN_HOME"/Rscript -e "load('currentMeans.RData');length(myMeans)" | awk -F' ' '{print $2}'`
+echo
+echo Checking that NUMTASKS \<= NUMCLUST
+echo NUMTASKS: \($NUMTASKS\)
+echo NUMCLUST:   \($NUMCLUST\)
+echo ........
+if [ $NUMTASKS -gt $NUMCLUST ]
+  then
+  echo Exiting.
+  echo
+  exit 1
+else
+  echo Proceeding.
+  echo
+fi
+
 ### Set up the configuration
 # Make sure number of nodes is the same as what you have requested from SLURM
 # usage: $myhadoop-configure.sh -h
@@ -63,12 +88,12 @@ echo "-------Start hdfs and yarn ---"
 $HADOOP_HOME/sbin/start-all.sh
 #### Format HDFS, if this is the first time or not a persistent instance
 echo "-------Show Report ---"
-#$HADOOP_HOME/bin/hadoop dfsadmin -report
+$HADOOP_HOME/bin/hadoop dfsadmin -report
 echo "-------make directory ---"
 $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -mkdir /data
 
 echo "-------copy file to hdfs ---"
-$HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -put ./clust5GB.csv /data/
+$HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -put ./"$DATANAME" /data/
 
 echo "-------list directory ---"
 $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -ls /data
@@ -90,19 +115,26 @@ $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -ls /data
 # Intermediary file between M-R runs converts deparsed data to RData file
 
 
-NITER=5
+NITER=5 #####################################
 
 echo "----------start kmeans iterations---------"
 for i in `seq 1 $NITER`
 do
   echo "--------ITER $i--------"
-  $HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR \
-    jar /util/academic/hadoop/2.5.1/hadoop-2.5.1/share/hadoop/tools/lib/hadoop-streaming-2.5.1.jar \
-    -mapper  "$RBIN_HOME/Rscript $PWD/km_mapper.r" \
-    -reducer "$RBIN_HOME/Rscript $PWD/km_reducer.r" \
-    -input /data/clust5GB.csv \
-    -output hadoop_output_i$i \
-    -file currentMeans.RData
+##################################### NOTE -D argument in hadoop call
+
+# original
+#  $HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR jar /util/academic/hadoop/2.5.1/hadoop-2.5.1/share/hadoop/tools/lib/hadoop-streaming-2.5.1.jar -D mapred.reduce.tasks=$NUMTASKS -mapper  "$RBIN_HOME/Rscript $PWD/km_mapper.r" -reducer "$RBIN_HOME/Rscript $PWD/km_reducer.r" -input /data/small2clust.csv -output hadoop_output_i$i -file currentMeans.RData;
+
+# modified
+$HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR \
+  jar /util/academic/hadoop/2.5.1/hadoop-2.5.1/share/hadoop/tools/lib/hadoop-streaming-2.5.1.jar \
+  -D mapreduce.job.reduces=$NUMTASKS \
+  -mapper "$RBIN_HOME/Rscript $PWD/km_mapper.r" \
+  -reducer "$RBIN_HOME/Rscript $PWD/km_reducer.r" \
+  -input /data/"$DATANAME" \
+  -output hadoop_output_i$i \
+  -file currentMeans.RData 
 
   echo "-------list output ---"
   # Get name of current output file
@@ -110,15 +142,26 @@ do
   $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -ls hadoop_output_i$i/
   THIS_OUTPUT=`$HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -ls hadoop_output_i$i/part-* | awk -F'/' '{print $2}'`
   echo
-  echo Current output file is: $THIS_OUTPUT
+  echo Current output files are: $THIS_OUTPUT
   echo
+
   # Copy output to local dir
   mkdir -p ./myoutput-$SLURM_JOBID/iter_$i/
-  $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -get hadoop_output_i$i/$THIS_OUTPUT ./myoutput-$SLURM_JOBID/iter_$i
+  for ff in $THIS_OUTPUT
+    do echo Copying $ff
+    $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -get hadoop_output_i$i/$ff ./myoutput-$SLURM_JOBID/iter_$i
+    echo
+    cat ./myoutput-$SLURM_JOBID/iter_$i/$ff
+    echo
+  done
   # Run script on output; outputs currentMeans.RData
-  cat ./myoutput-$SLURM_JOBID/iter_$i/$THIS_OUTPUT | Rscript km_intermediary.r
+  echo Contents of myoutput-$SLURM_JOBID/iter_$i
+  ls -lht ./myoutput-$SLURM_JOBID/iter_$i
+  echo Concatenated mean vectors:
+  cat ./myoutput-$SLURM_JOBID/iter_$i/part-*
+  cat ./myoutput-$SLURM_JOBID/iter_$i/part-* | Rscript km_intermediary.r
   cp currentMeans.RData ./myoutput-$SLURM_JOBID/iter_$i/currentMeans_i$(expr $i + 1).RData
-  ls -lht
+  #ls -lht
 
 done
 
@@ -133,7 +176,7 @@ $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -ls /data
 echo "-------Get output ---"
 #$HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -get wordcount-output ./myoutput1-$SLURM_JOBID
 #$HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -get lettercount-output ./myoutput2-$SLURM_JOBID
-$HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -help
+#$HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -help
 
 echo "-------Stop hdfs and yarn ---"
 $HADOOP_HOME/sbin/stop-all.sh

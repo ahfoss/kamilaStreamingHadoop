@@ -1,4 +1,4 @@
-#!/usr/bin/env Rscript
+#!/util/academic/R/R-3.0.0/bin/Rscript
 
 # Input: current means, full csv data set
 # Output: full csv data set with tab-delimited prepended first column closest cluster id
@@ -31,5 +31,6 @@ while(length(line <- readLines(f,n=1)) > 0) {
    ,'\t'
    ,paste(vec,collapse=',')
    ,'\n'
+   ,sep=''
   )
 }
