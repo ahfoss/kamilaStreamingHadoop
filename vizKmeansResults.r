@@ -1,9 +1,10 @@
 
 # get csv data file, subsampled if necessary
 dataFileName <- 'small2clust.csv'
+saveDirName <- 'summary'
 
 # get directory structure, cluster centroid
-JOBID <- '5120587'
+JOBID <- '5146222'
 centroidFileNames <- list.files(
   paste('myoutput-',JOBID,sep=''),
   pattern='currentMeans_i',
@@ -54,8 +55,10 @@ datColors <- t(apply(
   function(rr) which.min(as.matrix(dist(rbind(rr,allCentroids[[numClust]])))[-1,1])
 ))
 
-# open image file
-png(file=paste('kmeansPlot_',JOBID,'.png',sep=''))
+# create image file
+suppressWarnings(dir.create(saveDirName))
+plotName <- paste('kmeansPlot_',JOBID,'.png',sep='')
+png(file=file.path(saveDirName,plotName))
 plot(
   dat %*% transMat,
   xlab='Principal Component 1',
@@ -70,16 +73,5 @@ for (i in 1:numClust) {
   text(transCentroids, labels=i)
 }
 
-#tmp <- lapply(
-#  allCentroids,
-#  FUN=function(dd) {
-#    points(dd %*% transMat, pch=19, col=1:nrow(dd))
-#  }
-#)
-#points(allCentroids[[5]] %*% solve(diag(svdDat$d) %*% t(svdDat$v)),pch=19,col='red')
-
-# plot cluster centroids
-
-# close image file
 png()
 
