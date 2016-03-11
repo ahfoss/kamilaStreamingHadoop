@@ -19,4 +19,5 @@ initialization map-reduce run
 summary map-reduce run to obtain:
   - boxplots for each variable by cluster
   - counts for each cluster
-  - a subset of the data (perhaps 5k randomly selected observations)
+  - summary statistics (objective function value, within to between SS, etc)
+Outer loop of repeated k-means runs with random initialized centroids
