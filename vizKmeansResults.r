@@ -4,7 +4,7 @@ dataFileName <- 'small2clust.csv'
 saveDirName <- 'summary'
 
 # get directory structure, cluster centroid
-JOBID <- '5146222'
+JOBID <- '5147916'
 centroidFileNames <- list.files(
   paste('myoutput-',JOBID,sep=''),
   pattern='currentMeans_i',
@@ -41,7 +41,8 @@ allCentroids <- lapply(
   }
 )
 #print(allCentroids)
-numClust <- length(allCentroids)
+numIter <- length(allCentroids)
+numClust <- nrow(allCentroids[[1]])
 
 # distinct colors for the clusters
 myColors <- rainbow(numClust)
@@ -52,7 +53,7 @@ myColorsAlpha <- rainbow(numClust,alpha=0.5)
 datColors <- t(apply(
   dat,
   1,
-  function(rr) which.min(as.matrix(dist(rbind(rr,allCentroids[[numClust]])))[-1,1])
+  function(rr) which.min(as.matrix(dist(rbind(rr,allCentroids[[numIter]])))[-1,1])
 ))
 
 # create image file
@@ -66,11 +67,11 @@ plot(
   col = myColorsAlpha[datColors]
 )
 
-for (i in 1:numClust) {
+for (i in 1:numIter) {
   transCentroids <- allCentroids[[i]] %*% transMat
-  points(transCentroids, pch=19, col=myColors, cex=2)
-  points(transCentroids, pch=1, col='black', cex=2, lwd=2)
-  text(transCentroids, labels=i)
+  points(transCentroids, pch=19, col=myColors, cex=2.5)
+  points(transCentroids, pch=1, col='black', cex=2.5, lwd=2)
+  text(transCentroids, labels=i,cex=0.8)
 }
 
 png()

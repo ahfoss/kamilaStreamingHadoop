@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --partition=general-compute
-##SBATCH --partition=debug
-#SBATCH --time=10:50:00
+##SBATCH --partition=general-compute
+#SBATCH --partition=debug
+#SBATCH --time=00:50:00
 
 #SBATCH --nodes=2
 #SBATCH --ntasks-per-node=12
@@ -37,15 +37,27 @@ module load myhadoop/0.30b
 module load R/3.0.0
 module list
 
-# User-specified values
-DATANAME=clust1GB.csv # file to be clustered
-
 ################
-# should be less than or equal to the # clusters
-NUMTASKS=4
+# User-specified values
+################
+DATANAME=small2clust.csv # file to be clustered
+
+# NUM_TASKS should be less than or equal to the # clusters
+NUM_TASKS=4
+# Number of initializations of the kmeans algorithm
+NUM_INIT=3
+# Max number of iterations per initialization
+MAX_NITER=40
+# Tolerance for determining convergence; see README.txt
+# Converted to float
+EPSILON=0.01
 
 export RBIN_HOME="/util/academic/R/R-3.0.0/bin"
 echo "RBIN_HOME="$RBIN_HOME
+################
+# End of user-specified values
+################
+
 
 echo "MH_HOME="$MH_HOME
 echo "HADOOP_HOME="$HADOOP_HOME
@@ -61,13 +73,13 @@ export HADOOP_CONF_DIR=$SLURM_SUBMIT_DIR/config-$SLURM_JOBID
 echo "MyHadoop config directory="$HADOOP_CONF_DIR
 
 # Test that the number of nodes <= number of clusters
-NUMCLUST=`"$RBIN_HOME"/Rscript -e "load('currentMeans.RData');length(myMeans)" | awk -F' ' '{print $2}'`
+NUM_CLUST=`"$RBIN_HOME"/Rscript -e "load('currentMeans.RData');length(myMeans)" | awk -F' ' '{print $2}'`
 echo
-echo Checking that NUMTASKS \<= NUMCLUST
-echo NUMTASKS: \($NUMTASKS\)
-echo NUMCLUST:   \($NUMCLUST\)
+echo Checking that NUM_TASKS \<= NUM_CLUST
+echo NUM_TASKS: \($NUM_TASKS\)
+echo NUM_CLUST:   \($NUM_CLUST\)
 echo ........
-if [ $NUMTASKS -gt $NUMCLUST ]
+if [ $NUM_TASKS -gt $NUM_CLUST ]
   then
   echo Exiting.
   echo
@@ -113,23 +125,28 @@ $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -ls /data
 # Reduce step: each cluster is assigned a centroid
 #	output: <k \t deparsed R object describing cluster centroid>
 # Intermediary file between M-R runs converts deparsed data to RData file
+# Each kmeans run terminates after MAX_NITER iterations or when the centroids
+#	change by less than EPSILON units; whichever happens first. See README.txt
+#	for details.
 
 
-NITER=5 #####################################
 
-echo "----------start kmeans iterations---------"
-for i in `seq 1 $NITER`
+echo "----------start kmeans run---------"
+# initialize the means based on the dimensionality of the data
+
+# Create variable to store sum of L1 norm of means of current vs previous
+# iteration.
+unset objectiveArray
+declare -a objectiveArray
+
+for i in `seq 1 $MAX_NITER`
 do
   echo "--------ITER $i--------"
-##################################### NOTE -D argument in hadoop call
-
-# original
-#  $HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR jar /util/academic/hadoop/2.5.1/hadoop-2.5.1/share/hadoop/tools/lib/hadoop-streaming-2.5.1.jar -D mapred.reduce.tasks=$NUMTASKS -mapper  "$RBIN_HOME/Rscript $PWD/km_mapper.r" -reducer "$RBIN_HOME/Rscript $PWD/km_reducer.r" -input /data/small2clust.csv -output hadoop_output_i$i -file currentMeans.RData;
 
 # modified
 $HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR \
   jar /util/academic/hadoop/2.5.1/hadoop-2.5.1/share/hadoop/tools/lib/hadoop-streaming-2.5.1.jar \
-  -D mapreduce.job.reduces=$NUMTASKS \
+  -D mapreduce.job.reduces=$NUM_TASKS \
   -mapper "$RBIN_HOME/Rscript $PWD/km_mapper.r" \
   -reducer "$RBIN_HOME/Rscript $PWD/km_reducer.r" \
   -input /data/"$DATANAME" \
@@ -154,14 +171,25 @@ $HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR \
     cat ./myoutput-$SLURM_JOBID/iter_$i/$ff
     echo
   done
-  # Run script on output; outputs currentMeans.RData
+
   echo Contents of myoutput-$SLURM_JOBID/iter_$i
   ls -lht ./myoutput-$SLURM_JOBID/iter_$i
   echo Concatenated mean vectors:
   cat ./myoutput-$SLURM_JOBID/iter_$i/part-*
-  cat ./myoutput-$SLURM_JOBID/iter_$i/part-* | Rscript km_intermediary.r
+  # Run script on output; km_intermediary.r outputs currentMeans.RData, as well
+  # as the objective function for the current iteration. Note if $i is 1, then
+  # 99 is stored in objectiveArray.
+  objectiveArray[$i]=`cat ./myoutput-$SLURM_JOBID/iter_$i/part-* | Rscript km_intermediary.r $EPSILON $SLURM_JOBID $i`
+  echo ${objectiveArray[*]} > ./myoutput-$SLURM_JOBID/iter_$i/currentObjective_i$(expr $i + 1).txt
   cp currentMeans.RData ./myoutput-$SLURM_JOBID/iter_$i/currentMeans_i$(expr $i + 1).RData
-  #ls -lht
+
+  # check if convergence criteria is met
+  if (( $(bc <<< "${objectiveArray[$i]} < $EPSILON") ))
+  then
+  	# if convergence criteria is met, then break this kmeans run
+	echo Breaking kmeans run early due to convergence criteria
+  	break
+  fi
 
 done
 
