@@ -24,7 +24,7 @@ dat <- rbind(
 )
 write.table(
   dat
- ,file="small2clust.csv"
+ ,file="csv/small2clust.csv"
  ,row.names=FALSE
  ,col.names=FALSE
  ,sep = ","
@@ -39,7 +39,7 @@ write.table(
 #)
 #write.table(
 #  dat
-# ,file="medium2clust.csv"
+# ,file="csv/medium2clust.csv"
 # ,row.names=FALSE
 # ,col.names=FALSE
 # ,sep = ","
@@ -59,7 +59,7 @@ ndim <- 3
 #  )
 #  write.table(
 #    thisDat
-#   ,file="clust1GB.csv"
+#   ,file="csv/clust1GB.csv"
 #   ,row.names=FALSE
 #   ,col.names=FALSE
 #   ,sep = ","
@@ -83,7 +83,7 @@ ndim <- 3
 #  )
 #  write.table(
 #    thisDat
-#   ,file="clust5GB.csv"
+#   ,file="csv/clust5GB.csv"
 #   ,row.names=FALSE
 #   ,col.names=FALSE
 #   ,sep = ","

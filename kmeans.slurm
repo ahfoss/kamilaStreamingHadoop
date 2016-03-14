@@ -41,13 +41,16 @@ module list
 # User-specified values
 ################
 DATANAME=small2clust.csv # file to be clustered
+DATADIR=csv # directory in which data file is stored
+DATA_DIM=5 # number of variables in the data set
+NUM_CLUST=4 # number of clusters
 
 # NUM_TASKS should be less than or equal to the # clusters
 NUM_TASKS=4
 # Number of initializations of the kmeans algorithm
 NUM_INIT=3
 # Max number of iterations per initialization
-MAX_NITER=40
+MAX_NITER=4
 # Tolerance for determining convergence; see README.txt
 # Converted to float
 EPSILON=0.01
@@ -59,6 +62,7 @@ echo "RBIN_HOME="$RBIN_HOME
 ################
 
 
+TMP_DIR=tmp_"$SLURM_JOBID"
 echo "MH_HOME="$MH_HOME
 echo "HADOOP_HOME="$HADOOP_HOME
 echo "Setting HADOOP to use SLURMTMPDIR on the local disk"
@@ -73,7 +77,6 @@ export HADOOP_CONF_DIR=$SLURM_SUBMIT_DIR/config-$SLURM_JOBID
 echo "MyHadoop config directory="$HADOOP_CONF_DIR
 
 # Test that the number of nodes <= number of clusters
-NUM_CLUST=`"$RBIN_HOME"/Rscript -e "load('currentMeans.RData');length(myMeans)" | awk -F' ' '{print $2}'`
 echo
 echo Checking that NUM_TASKS \<= NUM_CLUST
 echo NUM_TASKS: \($NUM_TASKS\)
@@ -105,7 +108,7 @@ echo "-------make directory ---"
 $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -mkdir /data
 
 echo "-------copy file to hdfs ---"
-$HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -put ./"$DATANAME" /data/
+$HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -put ./"$DATADIR"/"$DATANAME" /data/
 
 echo "-------list directory ---"
 $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -ls /data
@@ -130,12 +133,23 @@ $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -ls /data
 #	for details.
 
 
+##################################################
+##################################################
+##################################################
+## outer number init kmeans loop starts here
+##################################################
+##################################################
+##################################################
+
 
 echo "----------start kmeans run---------"
 # initialize the means based on the dimensionality of the data
+mkdir $TMP_DIR
+Rscript km_initialize_run.r $DATA_DIM $NUM_CLUST $TMP_DIR
+mkdir -p ./myoutput-$SLURM_JOBID/iter_0/
+cp $TMP_DIR/initialMeans.RData ./myoutput-$SLURM_JOBID/iter_0/currentMeans_i1.RData
 
-# Create variable to store sum of L1 norm of means of current vs previous
-# iteration.
+# Create variable to store values used to assess convergence
 unset objectiveArray
 declare -a objectiveArray
 
@@ -151,7 +165,7 @@ $HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR \
   -reducer "$RBIN_HOME/Rscript $PWD/km_reducer.r" \
   -input /data/"$DATANAME" \
   -output hadoop_output_i$i \
-  -file currentMeans.RData 
+  -file "$TMP_DIR"/currentMeans.RData 
 
   echo "-------list output ---"
   # Get name of current output file
@@ -163,7 +177,7 @@ $HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR \
   echo
 
   # Copy output to local dir
-  mkdir -p ./myoutput-$SLURM_JOBID/iter_$i/
+  mkdir ./myoutput-$SLURM_JOBID/iter_$i/
   for ff in $THIS_OUTPUT
     do echo Copying $ff
     $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -get hadoop_output_i$i/$ff ./myoutput-$SLURM_JOBID/iter_$i
@@ -179,20 +193,31 @@ $HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR \
   # Run script on output; km_intermediary.r outputs currentMeans.RData, as well
   # as the objective function for the current iteration. Note if $i is 1, then
   # 99 is stored in objectiveArray.
-  objectiveArray[$i]=`cat ./myoutput-$SLURM_JOBID/iter_$i/part-* | Rscript km_intermediary.r $EPSILON $SLURM_JOBID $i`
+
+  objectiveArray[$i]=`cat ./myoutput-$SLURM_JOBID/iter_$i/part-* | Rscript km_intermediary.r $EPSILON $SLURM_JOBID $i $TMP_DIR`
   echo ${objectiveArray[*]} > ./myoutput-$SLURM_JOBID/iter_$i/currentObjective_i$(expr $i + 1).txt
-  cp currentMeans.RData ./myoutput-$SLURM_JOBID/iter_$i/currentMeans_i$(expr $i + 1).RData
+  cp $TMP_DIR/currentMeans.RData ./myoutput-$SLURM_JOBID/iter_$i/currentMeans_i$(expr $i + 1).RData
 
   # check if convergence criteria is met
   if (( $(bc <<< "${objectiveArray[$i]} < $EPSILON") ))
   then
-  	# if convergence criteria is met, then break this kmeans run
-	echo Breaking kmeans run early due to convergence criteria
-  	break
+    # if convergence criteria is met, then break this kmeans run
+    echo "Convergence criteria met: Breaking kmeans run early"
+    break
   fi
 
 done
 
+# remove tmp dir containing intial and current means
+rm -r $TMP_DIR
+
+##################################################
+##################################################
+##################################################
+## outer number init kmeans loop ends here
+##################################################
+##################################################
+##################################################
 echo
 echo
 echo

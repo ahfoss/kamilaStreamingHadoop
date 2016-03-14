@@ -1,16 +1,24 @@
 
 # get csv data file, subsampled if necessary
-dataFileName <- 'small2clust.csv'
+dataFileName <- 'csv/small2clust.csv'
 saveDirName <- 'summary'
 
 # get directory structure, cluster centroid
-JOBID <- '5147916'
+JOBID <- '5148985'
 centroidFileNames <- list.files(
   paste('myoutput-',JOBID,sep=''),
   pattern='currentMeans_i',
   recursive=TRUE,
   full.names=TRUE
 )
+centroidFileNames <- as.vector(centroidFileNames)
+cat('Before sorting:\n')
+print(centroidFileNames)
+
+# Sort in _numeric_ order
+centroidFileNames <- centroidFileNames[order(nchar(centroidFileNames), centroidFileNames)]
+cat('\nAfter sorting:\n')
+print(centroidFileNames)
 
 # Read in full data and rescale
 dat <- read.csv(dataFileName,header=FALSE)
