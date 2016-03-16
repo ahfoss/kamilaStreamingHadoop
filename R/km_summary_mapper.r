@@ -1,7 +1,7 @@
 #!/util/academic/R/R-3.0.0/bin/Rscript
 
 # Input: current means, full csv data set
-# Output: full csv data set with tab-delimited prepended first column closest cluster id
+# Output: cluster membership, squared Euclidean distance to respective centroid; tab delimited
 
 load('currentMeans.RData')
 if (!exists('myMeans')) stop("Mean RData file not found")
@@ -23,12 +23,14 @@ while(length(line <- readLines(f,n=1)) > 0) {
     }
   }
 
-  # output <clustNum \t vec>
-  # where vec is comma separated numeric values
+  # get squared euclidean distance
+  squaredEucDist <- smallestDist^2
+
+  # output <clustNum \t dist>
   cat(
     closestClust
    ,'\t'
-   ,paste(vec,collapse=',')
+   ,squaredEucDist
    ,'\n'
    ,sep=''
   )

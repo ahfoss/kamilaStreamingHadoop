@@ -6,15 +6,8 @@ set.seed(2)
 ndim <- 5
 mu2 <- 3
 
-# initial means
-myMeans <- list(
-  runif(ndim,-1,4)
- ,runif(ndim,-1,4)
- ,runif(ndim,-1,4)
- ,runif(ndim,-1,4)
-)
-save(myMeans,file='currentMeans.RData')
-save(myMeans,file='initMeans.RData')
+# create data directory
+suppressWarnings(dir.create('csv'))
 
 # small dataset
 nn <- 10^3
@@ -22,6 +15,7 @@ dat <- rbind(
   rmvnorm(nn,sigma=diag(ndim))
  ,rmvnorm(nn,mean=rep(mu2,ndim),sigma=diag(ndim))
 )
+
 write.table(
   dat
  ,file="csv/small2clust.csv"

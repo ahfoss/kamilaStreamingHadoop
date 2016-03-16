@@ -40,6 +40,7 @@ module list
 ################
 # User-specified values
 ################
+# Date file is ./$DATADIR/$DATANAME
 DATANAME=small2clust.csv # file to be clustered
 DATADIR=csv # directory in which data file is stored
 DATA_DIM=5 # number of variables in the data set
@@ -137,6 +138,9 @@ $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -ls /data
 ##################################################
 ##################################################
 ## outer number init kmeans loop starts here
+## Outer loop starts here; each iteration is a unique
+## k-means run. The best is chosen as the final
+## partition.
 ##################################################
 ##################################################
 ##################################################
@@ -157,7 +161,7 @@ for i in `seq 1 $MAX_NITER`
 do
   echo "--------ITER $i--------"
 
-# modified
+# Primary M-R step
 $HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR \
   jar /util/academic/hadoop/2.5.1/hadoop-2.5.1/share/hadoop/tools/lib/hadoop-streaming-2.5.1.jar \
   -D mapreduce.job.reduces=$NUM_TASKS \
@@ -190,10 +194,9 @@ $HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR \
   ls -lht ./myoutput-$SLURM_JOBID/iter_$i
   echo Concatenated mean vectors:
   cat ./myoutput-$SLURM_JOBID/iter_$i/part-*
-  # Run script on output; km_intermediary.r outputs currentMeans.RData, as well
-  # as the objective function for the current iteration. Note if $i is 1, then
-  # 99 is stored in objectiveArray.
 
+  # Run script on output; km_intermediary.r outputs currentMeans.RData, as well
+  # as the objective function for the current iteration.
   objectiveArray[$i]=`cat ./myoutput-$SLURM_JOBID/iter_$i/part-* | Rscript km_intermediary.r $EPSILON $SLURM_JOBID $i $TMP_DIR`
   echo ${objectiveArray[*]} > ./myoutput-$SLURM_JOBID/iter_$i/currentObjective_i$(expr $i + 1).txt
   cp $TMP_DIR/currentMeans.RData ./myoutput-$SLURM_JOBID/iter_$i/currentMeans_i$(expr $i + 1).RData
@@ -207,6 +210,45 @@ $HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR \
   fi
 
 done
+
+##################################################
+echo "Summary stats M-R run:"
+##################################################
+#
+# Final map-reduce run to calculate within cluster
+# sum of squares, and final cluster counts.
+#
+# M: calc cluster memberships
+#    squared euclidean distance for each point
+# R: cluster counts
+#    w/in cluster SS
+#
+##################################################
+$HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR \
+  jar /util/academic/hadoop/2.5.1/hadoop-2.5.1/share/hadoop/tools/lib/hadoop-streaming-2.5.1.jar \
+  -D mapreduce.job.reduces=$NUM_TASKS \
+  -mapper "$RBIN_HOME/Rscript $PWD/R/km_summary_mapper.r" \
+  -reducer "$RBIN_HOME/Rscript $PWD/R/km_summary_reducer.r" \
+  -input /data/"$DATANAME" \
+  -output hadoop_stats \
+  -file "$TMP_DIR"/currentMeans.RData 
+
+# tabulate and store summary stats
+mkdir ./myoutput-$SLURM_JOBID/stats/
+$HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -get hadoop_stats/part-* ./myoutput-$SLURM_JOBID/stats/
+
+# save stats file
+cat ./myoutput-$SLURM_JOBID/stats/* > ./myoutput-$SLURM_JOBID/stats/stats.tsv
+echo
+echo "Show summary stats file contents:"
+cat ./myoutput-$SLURM_JOBID/stats/stats.tsv
+
+# calculate and store total WSS
+thisWss=`awk -F'\t' '{ sum += $3 } END { print sum }' ./myoutput-$SLURM_JOBID/stats/stats.tsv`
+echo $thisWss > ./myoutput-$SLURM_JOBID/stats/totalWss.txt
+##################################################
+echo "End of summary stats M-R run"
+##################################################
 
 # remove tmp dir containing intial and current means
 rm -r $TMP_DIR
