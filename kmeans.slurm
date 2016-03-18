@@ -149,7 +149,7 @@ $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -ls /data
 echo "----------start kmeans run---------"
 # initialize the means based on the dimensionality of the data
 mkdir $TMP_DIR
-Rscript km_initialize_run.r $DATA_DIM $NUM_CLUST $TMP_DIR
+Rscript R/km_initialize_run.R $DATA_DIM $NUM_CLUST $TMP_DIR
 mkdir -p ./myoutput-$SLURM_JOBID/iter_0/
 cp $TMP_DIR/initialMeans.RData ./myoutput-$SLURM_JOBID/iter_0/currentMeans_i1.RData
 
@@ -165,8 +165,8 @@ do
 $HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR \
   jar /util/academic/hadoop/2.5.1/hadoop-2.5.1/share/hadoop/tools/lib/hadoop-streaming-2.5.1.jar \
   -D mapreduce.job.reduces=$NUM_TASKS \
-  -mapper "$RBIN_HOME/Rscript $PWD/km_mapper.r" \
-  -reducer "$RBIN_HOME/Rscript $PWD/km_reducer.r" \
+  -mapper "$RBIN_HOME/Rscript $PWD/R/km_mapper.R" \
+  -reducer "$RBIN_HOME/Rscript $PWD/R/km_reducer.R" \
   -input /data/"$DATANAME" \
   -output hadoop_output_i$i \
   -file "$TMP_DIR"/currentMeans.RData 
@@ -195,9 +195,9 @@ $HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR \
   echo Concatenated mean vectors:
   cat ./myoutput-$SLURM_JOBID/iter_$i/part-*
 
-  # Run script on output; km_intermediary.r outputs currentMeans.RData, as well
+  # Run script on output; km_intermediary.R outputs currentMeans.RData, as well
   # as the objective function for the current iteration.
-  objectiveArray[$i]=`cat ./myoutput-$SLURM_JOBID/iter_$i/part-* | Rscript km_intermediary.r $EPSILON $SLURM_JOBID $i $TMP_DIR`
+  objectiveArray[$i]=`cat ./myoutput-$SLURM_JOBID/iter_$i/part-* | Rscript R/km_intermediary.R $EPSILON $SLURM_JOBID $i $TMP_DIR`
   echo ${objectiveArray[*]} > ./myoutput-$SLURM_JOBID/iter_$i/currentObjective_i$(expr $i + 1).txt
   cp $TMP_DIR/currentMeans.RData ./myoutput-$SLURM_JOBID/iter_$i/currentMeans_i$(expr $i + 1).RData
 
@@ -227,8 +227,8 @@ echo "Summary stats M-R run:"
 $HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR \
   jar /util/academic/hadoop/2.5.1/hadoop-2.5.1/share/hadoop/tools/lib/hadoop-streaming-2.5.1.jar \
   -D mapreduce.job.reduces=$NUM_TASKS \
-  -mapper "$RBIN_HOME/Rscript $PWD/R/km_summary_mapper.r" \
-  -reducer "$RBIN_HOME/Rscript $PWD/R/km_summary_reducer.r" \
+  -mapper "$RBIN_HOME/Rscript $PWD/R/km_summary_mapper.R" \
+  -reducer "$RBIN_HOME/Rscript $PWD/R/km_summary_reducer.R" \
   -input /data/"$DATANAME" \
   -output hadoop_stats \
   -file "$TMP_DIR"/currentMeans.RData 

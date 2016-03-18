@@ -1,9 +1,8 @@
 #!usr/bin/env python
 #
 # For an input [1] csv data filename [2] number of lines in input data set
-# [3] number of subsampled points, this program determines the exact  number of
-# lines in the file by binary search, then creates a subsampled data set of the
-# specified size.
+# [3] number of subsampled points, this program creates a subsampled data set of
+# the specified size.
 #
 # Number of lines can be obtained, e.g., at the BASH command line with the command:
 # > file=2006.csv; cat "$file" | nl | tail -1|  awk -F' ' '{print $1}' > num_lines_"$file"

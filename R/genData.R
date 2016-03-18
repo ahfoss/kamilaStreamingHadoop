@@ -84,3 +84,12 @@ ndim <- 3
 #   ,append = TRUE
 #  )
 #}
+
+# small data set with missing values and non-numbers
+dat <- data.frame(a=rnorm(25),b=sample(letters,size=25,replace=T),stringsAsFactors=F)
+dat[3,1]=NA
+dat[1,2]=1
+dat[2,2]=''
+for (i in 5:24) dat[i,2]=i
+write.csv(dat,file='csv/smallMissing.csv')
+
