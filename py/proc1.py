@@ -88,7 +88,7 @@ with open(DATA_FILE_NAME,'r') as inFile, open(outFileName, 'w') as outFile:
         rowMissingTable[numMissingInRow] += 1
         if numMissingInRow == 0:
             # write row minus flagged columns
-            outFileWriter.writerow([elm for j, elm in enumerate(row) if j not in RMV_COL])
+            outFileWriter.writerow([elm for j, elm in enumerate(row) if (j+1) not in RMV_COL])
 
 print "rowMissingTable"
 print rowMissingTable

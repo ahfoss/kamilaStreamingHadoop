@@ -31,6 +31,7 @@ import sys
 import os.path
 import csv
 import numpy as np
+import warnings
 
 narg = len(sys.argv)
 if narg < 2:
@@ -61,6 +62,9 @@ print "Number of columns: " + str(numCol)
 sum1 = np.zeros(numCol, dtype=np.float64)
 count = 0
 
+print
+print "Calculating means....."
+
 with open(DATA_FILE_NAME, 'r') as inFile:
     inFileReader = csv.reader(inFile, delimiter=',', quotechar='"')
     for row in inFileReader:
@@ -70,6 +74,10 @@ with open(DATA_FILE_NAME, 'r') as inFile:
         count += 1
 means = sum1 / count
 
+print "DONE"
+print
+print "Calculating variances....."
+
 sum2 = np.zeros(numCol, dtype=np.float64)
 with open(DATA_FILE_NAME, 'r') as inFile:
     inFileReader = csv.reader(inFile, delimiter=',', quotechar='"')
@@ -78,11 +86,25 @@ with open(DATA_FILE_NAME, 'r') as inFile:
         sum2 += np.power(np.asarray(row, dtype=np.float64) - means, 2)
 stdevs = np.sqrt(sum2 / (count - 1))
 
+# Give warning if variance is zero
+for i, elm in enumerate(stdevs):
+    if elm == 0:
+        warnings.warn('Variable ' + str(i+1) + ' has variance 0')
+
+print "DONE"
+print
+print "Writing to primary output file..."
+
 with open(DATA_FILE_NAME, 'r') as inFile, open(outFileName, 'w') as outFile:
     inFileReader = csv.reader(inFile, delimiter=',', quotechar='"')
     outFileWriter = csv.writer(outFile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
     for row in inFileReader:
-        outFileWriter.writerow( (np.asarray(row, dtype=np.float64) - means) / stdevs )
+        # handle cases where variance is zero
+        outFileWriter.writerow( [ 0 if s==0 else (x-m)/s for x,m,s in zip(np.asarray(row,dtype=np.float64),means,stdevs) ] )
+
+print "DONE"
+print
+print "Writing variable statistics..."
 
 # write out means, std
 with open(outFileNameStats, 'w') as outStats:
@@ -90,3 +112,6 @@ with open(outFileNameStats, 'w') as outStats:
     outStatsWriter.writerow(['Variable Index', 'Mean', 'Standard Deviation'])
     for i in xrange(numCol):
         outStatsWriter.writerow([i+1, means[i], stdevs[i]])
+
+print "DONE"
+
