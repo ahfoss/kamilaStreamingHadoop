@@ -30,21 +30,20 @@ print "Now generating random row indices"
 # generate random row numbers
 inds = random.sample(xrange(long(numLines)),int(numSample))
 
-# open data file
-inFile = open(dataFileName, 'r')
-
 # open new file
 outFile = open(outFileName, 'w')
 
 print "Now writing rows to file"
 numWritten = 0
 # write rows to new file
-for i, line in enumerate(inFile):
-	if i in inds:
-		outFile.write(line)
-		numWritten += 1
-		if numWritten % 50 == 0:
-			print '%d/%s complete...' % (numWritten, numSample)
+
+with open(dataFileName,'r') as inFile:
+	for i, line in enumerate(inFile):
+		if i in inds:
+			outFile.write(line)
+			numWritten += 1
+			if numWritten % 50 == 0:
+				print '%d/%s complete...' % (numWritten, numSample)
 
 # cleanup
 inFile.close()

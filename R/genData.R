@@ -91,5 +91,11 @@ dat[3,1]=NA
 dat[1,2]=1
 dat[2,2]=''
 for (i in 5:24) dat[i,2]=i
-write.csv(dat,file='csv/smallMissing.csv')
+write.table(
+  dat
+ ,file='csv/smallMissing.csv'
+ ,row.names=FALSE
+ ,col.names=FALSE
+ ,sep=","
+)
 
