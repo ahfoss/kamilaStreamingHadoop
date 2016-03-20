@@ -1,28 +1,40 @@
 #!/bin/bash
-##SBATCH --partition=general-compute
-#SBATCH --partition=debug
-#SBATCH --time=00:50:00
 
-#SBATCH --nodes=2
-#SBATCH --ntasks-per-node=12
-##SBATCH --constraint=CPU-E5645
-## --exclusive allocates the entire node for this job
-#SBATCH --exclusive
-
-#SBATCH --job-name="hadoopKM"
-#SBATCH --output=test-%J.out
-#SBATCH --mail-user=ahfoss@buffalo.edu
-#SBATCH --mail-type=ALL
-
-##SBATCH --requeue
-#Specifies that the job will be requeued after a node failure.
-#The default is that the job will not be requeued.
-#
 # This SLURM script is modified version of the SDSC script
 # found in /util/academic/myhadoop/myHadoop-0.30b/examples.
 # CDC January 29, 2015
 #
 # Modified 3/9/15 by Alex Foss for streaming mode
+
+
+##############################
+# Debugging SLURM options
+#SBATCH --partition=debug
+#SBATCH --time=00:50:00
+#SBATCH --nodes=2
+##############################
+
+##############################
+# Full SLURM options
+##SBATCH --partition=general-compute
+##SBATCH --time=20:50:00
+##SBATCH --nodes=10
+#Specifies that the job will be requeued after a node failure.
+#The default is that the job will not be requeued.
+##SBATCH --requeue
+##############################
+##SBATCH --constraint=CPU-E5645
+##SBATCH --ntasks-per-node=12
+
+##############################
+# General SLURM options for full or debugging mode
+## --exclusive allocates the entire node for this job
+#SBATCH --exclusive
+#SBATCH --job-name="hadoo104"
+#SBATCH --output=test-%J.out
+#SBATCH --mail-user=ahfoss@buffalo.edu
+#SBATCH --mail-type=ALL
+##############################
 
 echo "SLURM_JOBID="$SLURM_JOBID
 echo "SLURM_JOB_NODELIST"=$SLURM_JOB_NODELIST
@@ -37,30 +49,37 @@ module load myhadoop/0.30b
 module load R/3.0.0
 module list
 
-################
+################################
 # User-specified values
-################
+################################
 # Date file is ./$DATADIR/$DATANAME
-DATANAME=small2clust.csv # file to be clustered
-DATADIR=csv # directory in which data file is stored
-DATA_DIM=5 # number of variables in the data set
-NUM_CLUST=4 # number of clusters
 
+# file to be clustered
+#DATANAME=1987_rmvna_norm.csv
+DATANAME=small2clust.csv
+# directory in which data file is stored
+DATADIR=csv
+
+# number of variables in the data set
+DATA_DIM=5
+
+# number of clusters to search for
+NUM_CLUST=10
 # NUM_TASKS should be less than or equal to the # clusters
-NUM_TASKS=4
+NUM_TASKS=10
 # Number of initializations of the kmeans algorithm
-NUM_INIT=3
+NUM_INIT=5
 # Max number of iterations per initialization
-MAX_NITER=4
+MAX_NITER=5
 # Tolerance for determining convergence; see README.txt
 # Converted to float
 EPSILON=0.01
 
 export RBIN_HOME="/util/academic/R/R-3.0.0/bin"
 echo "RBIN_HOME="$RBIN_HOME
-################
+################################
 # End of user-specified values
-################
+################################
 
 
 TMP_DIR=tmp_"$SLURM_JOBID"
@@ -193,11 +212,11 @@ $HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR \
   echo Contents of myoutput-$SLURM_JOBID/iter_$i
   ls -lht ./myoutput-$SLURM_JOBID/iter_$i
   echo Concatenated mean vectors:
-  cat ./myoutput-$SLURM_JOBID/iter_$i/part-*
+  cat ./myoutput-$SLURM_JOBID/iter_$i/part-* | sort -n
 
   # Run script on output; km_intermediary.R outputs currentMeans.RData, as well
   # as the objective function for the current iteration.
-  objectiveArray[$i]=`cat ./myoutput-$SLURM_JOBID/iter_$i/part-* | Rscript R/km_intermediary.R $EPSILON $SLURM_JOBID $i $TMP_DIR`
+  objectiveArray[$i]=`cat ./myoutput-$SLURM_JOBID/iter_$i/part-* | sort -n | Rscript R/km_intermediary.R $EPSILON $SLURM_JOBID $i $TMP_DIR`
   echo ${objectiveArray[*]} > ./myoutput-$SLURM_JOBID/iter_$i/currentObjective_i$(expr $i + 1).txt
   cp $TMP_DIR/currentMeans.RData ./myoutput-$SLURM_JOBID/iter_$i/currentMeans_i$(expr $i + 1).RData
 
@@ -238,7 +257,7 @@ mkdir ./myoutput-$SLURM_JOBID/stats/
 $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -get hadoop_stats/part-* ./myoutput-$SLURM_JOBID/stats/
 
 # save stats file
-cat ./myoutput-$SLURM_JOBID/stats/* > ./myoutput-$SLURM_JOBID/stats/stats.tsv
+cat ./myoutput-$SLURM_JOBID/stats/* | sort -n > ./myoutput-$SLURM_JOBID/stats/stats.tsv
 echo
 echo "Show summary stats file contents:"
 cat ./myoutput-$SLURM_JOBID/stats/stats.tsv

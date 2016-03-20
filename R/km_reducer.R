@@ -35,7 +35,7 @@ while(length(line <- readLines(f,n=1)) > 0) {
       # executed when ending a cluster
       logClusterInfo(last_key,running_total/clustCount)
     }
-    # executed when starting the first cluster
+    # executed when starting any cluster, including the first
     running_total <- value
     clustCount <- 1
     last_key <- this_key

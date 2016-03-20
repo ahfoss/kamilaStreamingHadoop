@@ -12,25 +12,30 @@
 # Written by alexanderhfoss@gmail.com
 ################################################################################
 
-if [ $# -eq 0 ]
+if [ $# -lt 2 ]
   then
-  echo "No arguments supplied."
+  echo "Insufficient number of arguments supplied."
   echo "Usage: sh BASH/monitor.sh USERID JOBNAME"
   echo "Exiting."
   exit 1
 fi
 
 # get job number
-JOBNUM=`squeue -u $1 -o "%.18i" | tail -1 | xargs`
+JOBNUM=`squeue -n $2 -o "%.18i" | tail -1 | xargs`
+# note SLURM displays first 8 characters of jobname
+SHORT_JOBNAME=`echo $2 | cut -c1-8`
+#SHORT_JOBNAME=`echo $2 | awk '{print substr($0,0,9)}'`
+#read -n 8 SHORT_JOBNAME <<< "$2"
 
 echo "Monitoring job name: "$2
+echo "Truncated job name:  "$SHORT_JOBNAME
 echo "Submitted by:        "$1
 echo "Job id number:       "$JOBNUM
 
 i=1
-while squeue -u $1 | grep -q $2
+while squeue -u $1 | grep -q $SHORT_JOBNAME
   # print slurm info
-  do squeue -u $1 -o "%.18i %.9P %.8j %.8u %.2t %.10M %.6D %.15R %p"
+  do squeue -n $2 -o "%.18i %.9P %.8j %.8u %.2t %.10M %.6D %.15R %p"
 
   # print kmeans progress
   printf "             PROGRESS: "
