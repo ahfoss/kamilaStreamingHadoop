@@ -23,6 +23,10 @@ while (length(line <- readLines(f,n=1)) > 0) {
   myMeans[[this_kvpair[1]]] <- eval(parse(text=this_kvpair[2]))
 }
 
+if (length(myMeans) == 0) {
+  cat('NA')
+  stop(paste('Stopped in iteration ',CURR_IND,'; no means detected.', sep=''))
+}
 save(myMeans,file=file.path(OUT_DIR,'currentMeans.RData'))
 
 # check convergence using input
@@ -30,7 +34,7 @@ currentMeans <- myMeans
 rm(myMeans)
 
 # load previous means. Yes, index of RData file is one plus the index of the
-# iter_[0-9] directory that contains it.
+# iter_[0-9]+ directory that contains it.
 # Loaded file contains the variable stored as "myMeans"
 #if (CURR_IND == 1) {
 #  cat(99)
@@ -42,6 +46,19 @@ load(file.path(
 ))
 prevMeans <- myMeans
 
+# If a cluster had zero points, initialize new random replacements
+dataDim <- length(prevMeans[[1]])
+for (i in 1:length(currentMeans)) {
+  if (length(currentMeans[[i]]) == 0) {
+    currentMeans[[i]] <- runif(n=dataDim, min = -3, max = 3)
+  }
+}
+# make sure to initialize new replacement means if the last clusters were empty
+lenPrevMeans <- length(prevMeans)
+while( length(currentMeans) < lenPrevMeans ) {
+  currentMeans[[length(currentMeans)+1]] <- runif(n=dataDim, min = -3, max = 3)
+}
+
 # calculate and output the objective function
 l1_norm <- function(x1, x2) {
   sum(abs(x1-x2))
@@ -49,7 +66,7 @@ l1_norm <- function(x1, x2) {
 
 objectiveFun <- 0
 for (i in 1:length(currentMeans)) {
-  objectiveFun <- l1_norm(currentMeans[[i]],prevMeans[[i]])
+  objectiveFun <- objectiveFun + l1_norm(currentMeans[[i]],prevMeans[[i]])
 }
 
 # write to stdout

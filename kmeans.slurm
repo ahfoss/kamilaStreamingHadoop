@@ -11,7 +11,7 @@
 # Debugging SLURM options
 #SBATCH --partition=debug
 #SBATCH --time=00:50:00
-#SBATCH --nodes=2
+#SBATCH --nodes=4
 ##############################
 
 ##############################
@@ -30,7 +30,7 @@
 # General SLURM options for full or debugging mode
 ## --exclusive allocates the entire node for this job
 #SBATCH --exclusive
-#SBATCH --job-name="hadoo104"
+#SBATCH --job-name="hadooDeb"
 #SBATCH --output=test-%J.out
 #SBATCH --mail-user=ahfoss@buffalo.edu
 #SBATCH --mail-type=ALL
@@ -70,7 +70,7 @@ NUM_TASKS=10
 # Number of initializations of the kmeans algorithm
 NUM_INIT=5
 # Max number of iterations per initialization
-MAX_NITER=5
+MAX_NITER=2
 # Tolerance for determining convergence; see README.txt
 # Converted to float
 EPSILON=0.01
@@ -183,12 +183,30 @@ do
 # Primary M-R step
 $HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR \
   jar /util/academic/hadoop/2.5.1/hadoop-2.5.1/share/hadoop/tools/lib/hadoop-streaming-2.5.1.jar \
-  -D mapreduce.job.reduces=$NUM_TASKS \
+  -D mapreduce.job.reduces="$NUM_TASKS" \
+  -D mapred.text.key.comparator.options="-n" \
   -mapper "$RBIN_HOME/Rscript $PWD/R/km_mapper.R" \
   -reducer "$RBIN_HOME/Rscript $PWD/R/km_reducer.R" \
   -input /data/"$DATANAME" \
-  -output hadoop_output_i$i \
+  -output hadoop_output_i"$i" \
   -file "$TMP_DIR"/currentMeans.RData 
+  #-reducer "/bin/cat" \
+
+#$HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR \
+#  jar /util/academic/hadoop/2.5.1/hadoop-2.5.1/share/hadoop/tools/lib/hadoop-streaming-2.5.1.jar \
+#  -D mapreduce.job.reduces=$NUM_TASKS \
+#  -D mapred.output.key.comparator.class=org.apache.hadoop.mapred.lib.KeyFieldBasedComparator \
+#  -D stream.num.map.output.key.fields=1 \
+#  -D mapred.text.key.comparator.options=-n \
+#  -mapper "$RBIN_HOME/Rscript $PWD/R/km_mapper.R" \
+#  -reducer "$RBIN_HOME/Rscript $PWD/R/km_reducer.R" \
+#  -input /data/"$DATANAME" \
+#  -output hadoop_output_i$i \
+#  -file "$TMP_DIR"/currentMeans.RData 
+#  #-reducer "/bin/cat" \
+#
+#      -D stream.map.output.field.separator=. \
+#	      -D map.output.key.field.separator=. \
 
   echo "-------list output ---"
   # Get name of current output file
@@ -217,6 +235,16 @@ $HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR \
   # Run script on output; km_intermediary.R outputs currentMeans.RData, as well
   # as the objective function for the current iteration.
   objectiveArray[$i]=`cat ./myoutput-$SLURM_JOBID/iter_$i/part-* | sort -n | Rscript R/km_intermediary.R $EPSILON $SLURM_JOBID $i $TMP_DIR`
+  if [ ${objectiveArray[$i]} = 'NA' ]
+  then
+    echo
+    echo "--------------------"
+    echo "ERROR in calculating distance between centroids"
+    echo "FAILURE: BREAKING K-MEANS RUN EARLY"
+    echo "--------------------"
+    echo
+    break
+  fi
   echo ${objectiveArray[*]} > ./myoutput-$SLURM_JOBID/iter_$i/currentObjective_i$(expr $i + 1).txt
   cp $TMP_DIR/currentMeans.RData ./myoutput-$SLURM_JOBID/iter_$i/currentMeans_i$(expr $i + 1).RData
 
@@ -246,6 +274,7 @@ echo "Summary stats M-R run:"
 $HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR \
   jar /util/academic/hadoop/2.5.1/hadoop-2.5.1/share/hadoop/tools/lib/hadoop-streaming-2.5.1.jar \
   -D mapreduce.job.reduces=$NUM_TASKS \
+  -D mapred.text.key.comparator.options=-n \
   -mapper "$RBIN_HOME/Rscript $PWD/R/km_summary_mapper.R" \
   -reducer "$RBIN_HOME/Rscript $PWD/R/km_summary_reducer.R" \
   -input /data/"$DATANAME" \
