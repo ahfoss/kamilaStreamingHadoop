@@ -273,7 +273,7 @@ echo "Summary stats M-R run:"
 $HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR \
   jar /util/academic/hadoop/2.5.1/hadoop-2.5.1/share/hadoop/tools/lib/hadoop-streaming-2.5.1.jar \
   -D mapreduce.job.reduces=$NUM_TASKS \
-  -D mapred.text.key.comparator.options=-n \
+  -D mapred.text.key.comparator.options="-n" \
   -mapper "$RBIN_HOME/Rscript $PWD/R/km_summary_mapper.R" \
   -reducer "$RBIN_HOME/Rscript $PWD/R/km_summary_reducer.R" \
   -input /data/"$DATANAME" \

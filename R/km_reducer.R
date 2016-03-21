@@ -20,11 +20,7 @@ last_key <- Inf
 # running tally of observations used in current sum
 clustCount <- 0
 
-DEBUGcounter = 5
 while(length(line <- readLines(f,n=1)) > 0) {
-  if (DEBUGcounter > 0) {
-    DEBUGcounter = DEBUGcounter - 1
-  }
   this_kvpair <- unlist(strsplit(line,split="\t"))
   this_key <- this_kvpair[1]
   value <- as.numeric(unlist(strsplit(this_kvpair[2],split=",")))
