@@ -9,19 +9,19 @@
 
 ##############################
 # Debugging SLURM options
-#SBATCH --partition=debug
-#SBATCH --time=00:50:00
-#SBATCH --nodes=4
+##SBATCH --partition=debug
+##SBATCH --time=00:50:00
+##SBATCH --nodes=4
 ##############################
 
 ##############################
 # Full SLURM options
-##SBATCH --partition=general-compute
-##SBATCH --time=20:50:00
-##SBATCH --nodes=10
+#SBATCH --partition=general-compute
+#SBATCH --time=20:50:00
+#SBATCH --nodes=2
 #Specifies that the job will be requeued after a node failure.
 #The default is that the job will not be requeued.
-##SBATCH --requeue
+#SBATCH --requeue
 ##############################
 ##SBATCH --constraint=CPU-E5645
 ##SBATCH --ntasks-per-node=12
@@ -30,7 +30,7 @@
 # General SLURM options for full or debugging mode
 ## --exclusive allocates the entire node for this job
 #SBATCH --exclusive
-#SBATCH --job-name="hadooDeb"
+#SBATCH --job-name="test"
 #SBATCH --output=test-%J.out
 #SBATCH --mail-user=ahfoss@buffalo.edu
 #SBATCH --mail-type=ALL
@@ -55,22 +55,21 @@ module list
 # Date file is ./$DATADIR/$DATANAME
 
 # file to be clustered
-#DATANAME=1987_rmvna_norm.csv
-DATANAME=small2clust.csv
+DATANAME=1987_rmvna_norm.csv
 # directory in which data file is stored
 DATADIR=csv
 
 # number of variables in the data set
-DATA_DIM=5
+DATA_DIM=11
 
 # number of clusters to search for
 NUM_CLUST=10
 # NUM_TASKS should be less than or equal to the # clusters
-NUM_TASKS=10
+NUM_TASKS=9
 # Number of initializations of the kmeans algorithm
 NUM_INIT=5
 # Max number of iterations per initialization
-MAX_NITER=2
+MAX_NITER=20
 # Tolerance for determining convergence; see README.txt
 # Converted to float
 EPSILON=0.01
