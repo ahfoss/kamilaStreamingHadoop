@@ -1,15 +1,28 @@
 #!usr/bin/env python
 #
-# For an input [1] csv data filename [2] number of lines in input data set
-# [3] number of subsampled points, this program creates a subsampled data set of
-# the specified size.
-#
-# Number of lines can be obtained, e.g., at the BASH command line with the command:
-# > file=2006.csv; cat "$file" | nl | tail -1|  awk -F' ' '{print $1}' > num_lines_"$file"
+documentation = '''
+ For an input [1] csv data filename [2] number of lines in input data set
+ [3] number of subsampled points, this program creates a subsampled data set of
+ the specified size.
+
+ Usage: python py/subsampleData.py csv/small2clust.csv 2000 250
+
+ Output: subsampled_*.csv, where * is the original filename.
+
+ Number of lines can be obtained, e.g., at the BASH command line with the command:
+ > file=2006.csv; cat "$file" | nl | tail -1|  awk -F' ' '{print $1}' > num_lines_"$file"
+'''
 
 import os.path
 import sys
 import random
+
+narg = len(sys.argv)
+if narg < 3:
+    print documentation
+    print "INSUFFIENT NUMBER OF ARGUMENTS SUPPLIED."
+    print "Exiting."
+    sys.exit()
 
 subsampleExtension = "subsampled_"
 

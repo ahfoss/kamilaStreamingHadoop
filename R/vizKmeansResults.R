@@ -12,6 +12,8 @@ documentation <- "
  [2] JOBID, the integer number of the SLURM job
 "
 
+library(MASS) # for ginv()
+
 # get input arguments
 argIn <- commandArgs(TRUE)
 if (length(argIn) < 2) {
@@ -50,13 +52,14 @@ print(centroidFileNames)
 dat <- read.csv(DATA_FILE_NAME,header=FALSE)
 datMeans <- colMeans(dat)
 datSds <- apply(dat,2,sd)
+datSds[datSds==0] <- 1 # for cols with no variance
 dat <- scale(dat, center=datMeans, scale=datSds)
 
 # plot first two PCs
 # X = U %*% D %*% V'
 # U = X %*% solve(D %*% V')
 svdDat <- svd(dat)
-transMat <- solve(diag(svdDat$d) %*% t(svdDat$v))
+transMat <- ginv(diag(svdDat$d) %*% t(svdDat$v))
 #print('str(dat)')
 #print(str(dat))
 #print('dim(transMat)')
