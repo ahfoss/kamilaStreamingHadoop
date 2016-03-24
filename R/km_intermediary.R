@@ -2,15 +2,17 @@
 # Input arguments:
 # [1] EPSILON, the tolerance used to assess convergence
 # [2] JOBID, the id of the current SLURM job
-# [3] CURR_IND, the index of the current kmeans iteration
-# [4] OUT_DIR, directory of current means file
+# [3] CURR_RUN, the index of the current kmeans run (outer loop)
+# [4] CURR_IND, the index of the current kmeans iteration (inner loop)
+# [5] OUT_DIR, directory of current means file
 
 # get input arguments
 argIn <- commandArgs(TRUE)
 EPSILON <- as.numeric(argIn[1])
 JOBID <- argIn[2]
-CURR_IND <- as.integer(argIn[3])
-OUT_DIR <- argIn[4]
+CURR_RUN <- as.integer(argIn[3])
+CURR_IND <- as.integer(argIn[4])
+OUT_DIR <- argIn[5]
 
 # convert output from reducing step (means formatted as plaintext parsed R objects) into actual R object
 f <- file("stdin")
@@ -36,11 +38,9 @@ rm(myMeans)
 # load previous means. Yes, index of RData file is one plus the index of the
 # iter_[0-9]+ directory that contains it.
 # Loaded file contains the variable stored as "myMeans"
-#if (CURR_IND == 1) {
-#  cat(99)
-#} else {
 load(file.path(
   paste('myoutput-',JOBID,sep=''),
+  paste('run_',CURR_RUN,sep=''),
   paste('iter_',CURR_IND - 1,sep=''),
   paste('currentMeans_i',CURR_IND,'.RData',sep='')
 ))
@@ -50,13 +50,15 @@ prevMeans <- myMeans
 dataDim <- length(prevMeans[[1]])
 for (i in 1:length(currentMeans)) {
   if (length(currentMeans[[i]]) == 0) {
-    currentMeans[[i]] <- runif(n=dataDim, min = -3, max = 3)
+    currentMeans[[i]] <- genMean(dataDim) # runif(n=dataDim, min = -2, max = 2)
+    warning('Empty mean detected in intermediary script; regenerating.')
   }
 }
 # make sure to initialize new replacement means if the last clusters were empty
 lenPrevMeans <- length(prevMeans)
 while( length(currentMeans) < lenPrevMeans ) {
-  currentMeans[[length(currentMeans)+1]] <- runif(n=dataDim, min = -3, max = 3)
+  currentMeans[[length(currentMeans)+1]] <- genMean(dataDim) # runif(n=dataDim, min = -2, max = 2)
+  warning('Empty mean detected in intermediary script; regenerating.')
 }
 
 # calculate and output the objective function

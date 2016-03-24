@@ -8,6 +8,8 @@
 # Could add functionality to accept a random seed, but for now instead we just
 # save the initialized means and re-use if necessary.
 
+source('./R/helperFunctions.R') # for genMean()
+
 # get input args
 argIn <- commandArgs(TRUE)
 DATA_DIM <- as.integer(argIn[1])
@@ -16,10 +18,10 @@ OUT_DIR <- argIn[3]
 
 myMeans <- list()
 for (i in 1:NUM_CLUST) {
-  myMeans[[i]] <- runif(n = DATA_DIM, min = -3, max = 3)
+  myMeans[[i]] <- genMean(DATA_DIM) # runif(n = DATA_DIM, min = -2, max = 2)
 }
 
-dir.create(OUT_DIR)
+#dir.create(OUT_DIR) # already created in kmeans.slurm script
 save(myMeans, file=file.path(OUT_DIR, 'currentMeans.RData')) # iteratively updated file
 save(myMeans, file=file.path(OUT_DIR, 'initialMeans.RData')) # permanent log file
 

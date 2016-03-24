@@ -1,0 +1,177 @@
+\documentclass{article}
+
+\title{K-means Clustering Results}
+\author{}
+%\date{}
+
+\usepackage[letterpaper, total={7in, 10in}]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{multirow} % for table cells spanning multiple rows
+
+% Create external files in this document.
+% used for biblio
+\usepackage{filecontents}
+
+%\usepackage[square,numbers]{natbib}
+%\bibliographystyle{plainnat} 
+
+% for double spacing
+%\usepackage{setspace}
+%\doublespacing
+
+\hypersetup{
+    linkcolor=,
+    colorlinks=true,
+    urlcolor=blue
+}
+
+\newcommand{\bs}[1]{\boldsymbol{#1}}
+\newcommand{\bx}{\boldsymbol{x}}
+
+
+
+% \tiny
+% \scriptsize
+% \footnotesize
+% \small
+% \normalsize
+% \large
+% \Large
+% \LARGE
+% \huge
+% \Huge 
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+\newpage
+
+\section{Initializations}
+
+
+<<init>>=
+#opts_knit$set(concordance=TRUE)
+#opts_knit$set(self.contained=FALSE)
+#opts_knit$set(tidy=TRUE)
+suppressMessages(library(xtable))
+#suppressMessages(library(ggplot2))
+sessionInfo()
+@
+
+
+\newpage
+\section{User-Supplied Values}
+
+Please specify the data set used and job number in the original .Rnw document:
+<<uservals>>=
+dataName='csv/small2clust_rmvna_norm.csv'
+JOBID='5183760'
+@
+
+\newpage
+\section{General Info}
+
+\subsection{Basic Dataset Information}
+% basic data set information from summaries
+<<basicDataInfo>>=
+varInfo <- read.csv()
+@
+% basic run info: # runs, # iter, # clust
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% Syntax for generating a figure %%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\begin{figure}
+%\begin{center}
+%\includegraphics[height=4cm]{path}
+%\end{center}
+%\caption{}
+%\label{fig:}
+%\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% Syntax for generating xtable  %%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%<<sampleXtable,results='asis',echo=FALSE>>=
+%sampleDf <- data.frame(n1=rnorm(5),pois1=rpois(5,10))
+%xtable(sampleDf,caption='Sample Table',label='tab:')
+%@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Syntax for generating table %%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\begin{table}
+%\begin{tabular}{|lcr|}
+%\hline
+%  & \multicolumn{2}{|c|}{Multicolumn text} \\
+%\hline
+%  m=1  &  eating                 & m=9  \\
+%  m=2  &  getting in/out of bed  & m=10 \\
+%  \multirow{3}{*}{Multirow}  &  getting in/out of bed  & m=10 \\
+%    &  getting in/out of bed  & m=10 \\
+%    &  getting in/out of bed  & m=10 \\
+%\hline
+%\end{tabular}
+%\caption{}
+%\label{tab:}
+%\end{table}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Syntax for algorithm (see above) %%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\begin{algorithm}
+%\caption{KAMILA}
+%\begin{algorithmic}
+%\FOR{User-specified number of initializations}
+%\STATE{Initialize $\hat{\boldsymbol{\mu}}_g^{(0)}, \hat{\boldsymbol{\theta}}_{gq}^{(0)} \; \forall g,q$ }
+%\REPEAT
+%  \STATE{PARTITION STEP}
+%  \bindent
+%    \STATE{ $d_{ig}^{(t)} \leftarrow \text{dist}(\mathbf{v}_i, \hat{\boldsymbol{\mu}}_g^{(t)})$ }
+%    \STATE{ $r_i^{(t)} \leftarrow \underset{g}{\text{min}}(d_{ig}^{(t)})$ }
+%    \STATE{ $\hat{f}_{\mathbf{V}}^{(t)} \leftarrow \text{RadialKDE}(\mathbf{r}^{(t)})$ }
+%    \STATE{ $c_{ig}^{(t)} \leftarrow \widehat{Pr}(\mathbf{w}_i \, | \, \text{observation $i \in$ population $g$})$ }
+%    \STATE{ $H_i^{(t)}(g) \leftarrow   \log \left[ \hat{f}_{\mathbf{V}}^{(t)}(d_{ig}^{(t)}) \right] + \log \left[ c_{ig}^{(t)} \right]$ }
+%    \STATE{ Assign observation $i$ to population $\underset{g}{\text{argmax}} \{ H_i^{(t)}(g) \}$}
+%  \eindent
+%  \STATE{ESTIMATION STEP}
+%  \bindent
+%    \STATE{ Calculate $ \hat{\boldsymbol{\mu}}_g^{(t+1)}$ and $\hat{\boldsymbol{\theta}}_{gq}^{(t+1)}$}
+%  \eindent
+%\UNTIL{Convergence }
+%\STATE{ $ObjectiveFun \leftarrow \sum_{i=1}^N \underset{g}{\text{max}} \{ H_i^{(final)}(g) \} $ }
+%\ENDFOR
+%\STATE{ Output partition that maximizes $ObjectiveFun$ }
+%\end{algorithmic}
+%\label{alg:kamila}
+%\end{algorithm}
+
+
+
+%\begin{filecontents}{biblio.bib}
+%@book{
+%  author99
+% ,title = {My Great Book}
+% ,author = {Samuel Clemens}
+% ,location = {Springfield}
+% ,publisher= {Random House Books}
+% ,date = 1999
+%}
+%\end{filecontents}
+
+%\bibliography{biblio}
+
+
+\end{document}
