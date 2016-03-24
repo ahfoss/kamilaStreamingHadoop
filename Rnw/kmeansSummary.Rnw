@@ -63,6 +63,7 @@
 #opts_knit$set(self.contained=FALSE)
 #opts_knit$set(tidy=TRUE)
 suppressMessages(library(xtable))
+suppressMessages(library(tools))
 #suppressMessages(library(ggplot2))
 sessionInfo()
 @
@@ -73,8 +74,8 @@ sessionInfo()
 
 Please specify the data set used and job number in the original .Rnw document:
 <<uservals>>=
-dataName='csv/small2clust_rmvna_norm.csv'
-JOBID='5183760'
+dataName='../csv/small2clust_rmvna_norm.csv'
+JOBID='5184519'
 @
 
 \newpage
@@ -82,10 +83,79 @@ JOBID='5183760'
 
 \subsection{Basic Dataset Information}
 % basic data set information from summaries
-<<basicDataInfo>>=
-varInfo <- read.csv()
+<<basicDataInfo,echo=FALSE>>=
+dataNameNoExt <- file_path_sans_ext(dataName)
+dataExt <- file_ext(dataName)
+varInfo <- read.csv(paste(dataNameNoExt,'_stats.',dataExt,sep=''))
 @
+
+<<printBasicDataInfo,echo=FALSE,results='asis'>>=
+print(
+  xtable(varInfo),
+  include.rownames=FALSE
+)
+@
+
 % basic run info: # runs, # iter, # clust
+<<runInfo,echo=FALSE>>=
+runDirs <- list.files(
+  path = file.path('..',paste('myoutput-',JOBID,sep='')),
+  pattern = 'run_[0-9]+'
+)
+
+runInfo <- data.frame(
+  run = 1:length(runDirs),
+  numIter = NA,
+  numClust = NA,
+  wss = NA
+)
+
+for (i in 1:length(runDirs)) {
+  iterDirs_i <- list.files(
+    path = file.path('..',paste('myoutput-',JOBID,sep=''),runDirs[i]),
+    pattern = 'iter_[0-9]+'
+  )
+  totalWssFile <- list.files(
+    path = file.path('..',paste('myoutput-',JOBID,sep=''),runDirs[i],'stats'),
+    pattern = 'totalWss.txt',
+    full.names = TRUE
+  )
+  clusterSsFiles <- list.files(
+    path = file.path('..',paste('myoutput-',JOBID,sep=''),runDirs[i],'stats'),
+    pattern = 'stats.tsv',
+    full.names = TRUE
+  )
+  #print(iterDirs_i)
+  #print(totalWssFile)
+  runInfo$numIter[i] <- length(iterDirs_i)
+  runInfo$numClust[i] <- nrow(read.table(clusterSsFiles))
+  runInfo$wss[i] <- read.table(totalWssFile)
+}
+@
+
+<<printRunInfo, echo=FALSE, results='asis'>>=
+print(
+  xtable(runInfo,digits=2),
+  include.rownames=FALSE
+)
+@
+
+\section{Cluster info}
+
+% size, wss, other measures for each cluster, bss
+% table with cluster by row, stat by column
+
+% variable specific cluster info: mean, sd, min, max
+% table with cluster by row, stat by column, one table per variable
+
+% pairs plot for first 4 pcs, show final cluster locations
+
+% Show evolution of centroids for best run, PCs 1 and 2 as implemented in viz script
+
+% ||B_i - B_{i-1}|| line plot -- value versus iteration number
+% best run in black, other runs in gray
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%% Syntax for generating a figure %%%%%%%%%
