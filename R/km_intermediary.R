@@ -6,6 +6,8 @@
 # [4] CURR_IND, the index of the current kmeans iteration (inner loop)
 # [5] OUT_DIR, directory of current means file
 
+source('./R/helperFunctions.R') # for genMean()
+
 # get input arguments
 argIn <- commandArgs(TRUE)
 EPSILON <- as.numeric(argIn[1])
