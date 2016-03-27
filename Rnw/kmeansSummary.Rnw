@@ -75,7 +75,8 @@ sessionInfo()
 Please specify the data set used and job number in the original .Rnw document:
 <<uservals>>=
 dataName='../csv/small2clust_rmvna_norm.csv'
-JOBID='5184519'
+JOBID='5203020'
+
 @
 
 \newpage
@@ -83,6 +84,8 @@ JOBID='5184519'
 
 \subsection{Basic Dataset Information}
 % basic data set information from summaries
+
+%%%%%%% Add info on missing vars from preprocessing step
 <<basicDataInfo,echo=FALSE>>=
 dataNameNoExt <- file_path_sans_ext(dataName)
 dataExt <- file_ext(dataName)

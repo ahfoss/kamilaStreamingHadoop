@@ -8,6 +8,7 @@ documentation = '''
    DATA_FILE_NAME is the pathway and file name of the data to be processed,
    in csv format. Optional integer inputs separated by spaces give index of
    column to be removed (1-based indexing).
+   The data file should have an initial row of column headers and no row names.
 
  Output:
    [1] *_rmvna.csv, where * denotes original filename. The original file with
@@ -70,19 +71,23 @@ numMissingInCol = [0] * numCol
 rowMissingTable = [0] * (numCol + 1)
 
 # process rows
+firstRow = True
 with open(DATA_FILE_NAME,'r') as inFile, open(outFileName, 'w') as outFile:
     inFileReader  = csv.reader(inFile,  delimiter=',', quotechar='"')
     outFileWriter = csv.writer(outFile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
     for row in inFileReader:
-        #print row
+        if firstRow:
+            # write row of headers
+            outFileWriter.writerow(row)
+            headerNames = row
+            firstRow = False
+            continue
         numMissingInRow = 0
         for i, elm in enumerate(row):
-            #print '\b' + str(i) + ':' + elm
             if (i+1) not in RMV_COL:
                 try:
                     elm = float(elm)
                 except ValueError:
-                    #elm = 'NA'
                     numMissingInRow += 1
                     numMissingInCol[i] += 1
         rowMissingTable[numMissingInRow] += 1
@@ -107,6 +112,6 @@ with open(outFileNameColLog, 'w') as outCol:
     outColWriter = csv.writer(outCol, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
     outColWriter.writerow(['Column index','Number of missing values in column'])
     for i, elm in enumerate(numMissingInCol):
-        outColWriter.writerow([i+1, elm])
+        outColWriter.writerow([i+1, headerNames[i], elm])
 
 

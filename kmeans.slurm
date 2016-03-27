@@ -65,9 +65,9 @@ DATA_DIM=5
 # number of clusters to search for
 NUM_CLUST=10
 # NUM_TASKS should be less than or equal to the # clusters
-NUM_TASKS=8
+NUM_TASKS=4
 # Number of initializations of the kmeans algorithm
-NUM_INIT=4
+NUM_INIT=3
 # Max number of iterations per initialization
 MAX_NITER=8
 # Tolerance for determining convergence; see README.txt
@@ -126,8 +126,9 @@ $HADOOP_HOME/bin/hadoop dfsadmin -report
 echo "-------make directory ---"
 $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -mkdir /data
 
-echo "-------copy file to hdfs ---"
-$HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -put ./"$DATADIR"/"$DATANAME" /data/
+echo "-------copy file to hdfs, don't copy header row ---"
+#$HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -put ./"$DATADIR"/"$DATANAME" /data/
+sed 1d ./"$DATADIR"/"$DATANAME" | $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -put - /data/"$DATANAME"
 
 echo "-------list directory ---"
 $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -ls /data

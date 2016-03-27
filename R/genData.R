@@ -20,7 +20,7 @@ write.table(
   dat
  ,file="csv/small2clust.csv"
  ,row.names=FALSE
- ,col.names=FALSE
+ ,col.names=TRUE
  ,sep = ","
 )
 
@@ -35,7 +35,7 @@ write.table(
 #  dat
 # ,file="csv/medium2clust.csv"
 # ,row.names=FALSE
-# ,col.names=FALSE
+# ,col.names=TRUE
 # ,sep = ","
 #)
 
@@ -55,7 +55,7 @@ ndim <- 3
 #    thisDat
 #   ,file="csv/clust1GB.csv"
 #   ,row.names=FALSE
-#   ,col.names=FALSE
+#   ,col.names=TRUE
 #   ,sep = ","
 #   ,append = TRUE
 #  )
@@ -79,7 +79,7 @@ ndim <- 3
 #    thisDat
 #   ,file="csv/clust5GB.csv"
 #   ,row.names=FALSE
-#   ,col.names=FALSE
+#   ,col.names=TRUE
 #   ,sep = ","
 #   ,append = TRUE
 #  )
@@ -95,7 +95,7 @@ write.table(
   dat
  ,file='csv/smallMissing.csv'
  ,row.names=FALSE
- ,col.names=FALSE
+ ,col.names=TRUE
  ,sep=","
 )
 

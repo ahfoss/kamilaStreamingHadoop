@@ -4,6 +4,8 @@ documentation = '''
  For an input [1] csv data filename [2] number of lines in input data set
  [3] number of subsampled points, this program creates a subsampled data set of
  the specified size.
+ Note that the file is expected to have an initial header row, which is counted
+ in [2] but not in [3].
 
  Usage: python py/subsampleData.py csv/small2clust.csv 2000 250
 
@@ -41,7 +43,8 @@ print "---------------"
 
 print "Now generating random row indices"
 # generate random row numbers
-inds = random.sample(xrange(long(numLines)),int(numSample))
+inds = random.sample(xrange(1,long(numLines)),int(numSample))
+inds = list([0]) + inds # include initial header row
 
 # open new file
 outFile = open(outFileName, 'w')

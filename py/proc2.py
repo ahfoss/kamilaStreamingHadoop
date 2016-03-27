@@ -65,9 +65,15 @@ count = 0
 print
 print "Calculating means....."
 
+firstRow = True
 with open(DATA_FILE_NAME, 'r') as inFile:
     inFileReader = csv.reader(inFile, delimiter=',', quotechar='"')
     for row in inFileReader:
+        if firstRow:
+            # skip header row
+            headerNames = row
+            firstRow = False
+            continue
         # add rows to sum1
         sum1 += np.asarray(row, dtype=np.float64)
         # increment count
@@ -78,10 +84,15 @@ print "DONE"
 print
 print "Calculating variances....."
 
+firstRow = True
 sum2 = np.zeros(numCol, dtype=np.float64)
 with open(DATA_FILE_NAME, 'r') as inFile:
     inFileReader = csv.reader(inFile, delimiter=',', quotechar='"')
     for row in inFileReader:
+        if firstRow:
+            # skip header row
+            firstRow = False
+            continue
         # add rows to sum1
         sum2 += np.power(np.asarray(row, dtype=np.float64) - means, 2)
 stdevs = np.sqrt(sum2 / (count - 1))
@@ -95,10 +106,16 @@ print "DONE"
 print
 print "Writing to primary output file..."
 
+firstRow = True
 with open(DATA_FILE_NAME, 'r') as inFile, open(outFileName, 'w') as outFile:
     inFileReader = csv.reader(inFile, delimiter=',', quotechar='"')
     outFileWriter = csv.writer(outFile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
     for row in inFileReader:
+        if firstRow:
+            # print header row
+            outFileWriter.writerow(row)
+            firstRow = False
+            continue
         # handle cases where variance is zero
         outFileWriter.writerow( [ 0 if s==0 else (x-m)/s for x,m,s in zip(np.asarray(row,dtype=np.float64),means,stdevs) ] )
 
@@ -109,9 +126,9 @@ print "Writing variable statistics..."
 # write out means, std
 with open(outFileNameStats, 'w') as outStats:
     outStatsWriter = csv.writer(outStats, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-    outStatsWriter.writerow(['Variable Index', 'Mean', 'Standard Deviation'])
+    outStatsWriter.writerow(['Variable Index', 'Variable Name', 'Mean', 'Standard Deviation'])
     for i in xrange(numCol):
-        outStatsWriter.writerow([i+1, means[i], stdevs[i]])
+        outStatsWriter.writerow([i+1, headerNames[i], means[i], stdevs[i]])
 
 print "DONE"
 
