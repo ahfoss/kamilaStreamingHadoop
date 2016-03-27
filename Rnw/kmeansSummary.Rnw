@@ -87,6 +87,7 @@ JOBID='5184519'
 dataNameNoExt <- file_path_sans_ext(dataName)
 dataExt <- file_ext(dataName)
 varInfo <- read.csv(paste(dataNameNoExt,'_stats.',dataExt,sep=''))
+outputFileName <- paste('myoutput-',JOBID,sep='')
 @
 
 <<printBasicDataInfo,echo=FALSE,results='asis'>>=
@@ -96,10 +97,11 @@ print(
 )
 @
 
+\subsection{Basic K-means Info}
 % basic run info: # runs, # iter, # clust
 <<runInfo,echo=FALSE>>=
 runDirs <- list.files(
-  path = file.path('..',paste('myoutput-',JOBID,sep='')),
+  path = file.path('..',outputFileName),
   pattern = 'run_[0-9]+'
 )
 
@@ -112,16 +114,16 @@ runInfo <- data.frame(
 
 for (i in 1:length(runDirs)) {
   iterDirs_i <- list.files(
-    path = file.path('..',paste('myoutput-',JOBID,sep=''),runDirs[i]),
+    path = file.path('..',outputFileName,runDirs[i]),
     pattern = 'iter_[0-9]+'
   )
   totalWssFile <- list.files(
-    path = file.path('..',paste('myoutput-',JOBID,sep=''),runDirs[i],'stats'),
+    path = file.path('..',outputFileName,runDirs[i],'stats'),
     pattern = 'totalWss.txt',
     full.names = TRUE
   )
   clusterSsFiles <- list.files(
-    path = file.path('..',paste('myoutput-',JOBID,sep=''),runDirs[i],'stats'),
+    path = file.path('..',outputFileName,runDirs[i],'stats'),
     pattern = 'stats.tsv',
     full.names = TRUE
   )

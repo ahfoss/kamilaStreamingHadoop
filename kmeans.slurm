@@ -69,7 +69,7 @@ NUM_TASKS=8
 # Number of initializations of the kmeans algorithm
 NUM_INIT=4
 # Max number of iterations per initialization
-MAX_NITER=15
+MAX_NITER=8
 # Tolerance for determining convergence; see README.txt
 # Converted to float
 EPSILON=0.01
