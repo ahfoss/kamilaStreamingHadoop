@@ -316,14 +316,14 @@ do
     $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -get run_"$runNumber"/hadoop_stats/part-* ./myoutput-$SLURM_JOBID/run_$runNumber/stats/
     
     # save stats file
-    cat ./myoutput-$SLURM_JOBID/run_$runNumber/stats/* | sort -n > ./myoutput-$SLURM_JOBID/run_$runNumber/stats/stats.tsv
+    echo 'ClusterNumber, ClusterSize, SSQ'  > ./myoutput-$SLURM_JOBID/run_$runNumber/stats/stats.tsv
+    cat ./myoutput-$SLURM_JOBID/run_$runNumber/stats/* | sort -n >> ./myoutput-$SLURM_JOBID/run_$runNumber/stats/stats.tsv
     echo
     echo "Show summary stats file contents:"
     cat ./myoutput-$SLURM_JOBID/run_$runNumber/stats/stats.tsv
     
     # calculate and store total WSS
     wssArray[$(($runNumber-1))]=`awk -F'\t' '{ sum += $3 } END { print sum }' ./myoutput-$SLURM_JOBID/run_$runNumber/stats/stats.tsv`
-    #thisWss=`awk -F'\t' '{ sum += $3 } END { print sum }' ./myoutput-$SLURM_JOBID/run_$runNumber/stats/stats.tsv`
     echo "Total WSS for this run is "${wssArray[$(($runNumber-1))]}
     echo ${wssArray[$(($runNumber-1))]} > ./myoutput-$SLURM_JOBID/run_$runNumber/stats/totalWss.txt
     ##################################################

@@ -10,30 +10,28 @@ documentation <- "
  [1] DATA_FILE_NAME, the path and filename of the input csv file that was
      clustered.
  [2] JOBID, the integer number of the SLURM job
+ [3] RUNID, the integer number of the run to visualize
 "
 
 library(MASS) # for ginv()
 
 # get input arguments
 argIn <- commandArgs(TRUE)
-if (length(argIn) < 2) {
+if (length(argIn) < 3) {
   writeLines('\n Not enough input arguments supplied!')
   writeLines(documentation)
   stop('Exiting')
 }
 DATA_FILE_NAME <- argIn[1]
 JOBID <- argIn[2]
-
-# get csv data file, subsampled if necessary
-#DATA_FILE_NAME <- 'csv/small2clust.csv'
-#JOBID <- '5148985'
+RUNID <- argIn[3]
 
 # Name of folder for output
 saveDirName <- 'summary'
 
 # get directory structure, cluster centroid
 centroidFileNames <- list.files(
-  paste('myoutput-',JOBID,sep=''),
+  file.path(paste('myoutput-',JOBID,sep=''),paste('run_',RUNID,sep='')),
   pattern='currentMeans_i',
   recursive=TRUE,
   full.names=TRUE
@@ -49,7 +47,7 @@ cat('\nAfter sorting:\n')
 print(centroidFileNames)
 
 # Read in full data and rescale
-dat <- read.csv(DATA_FILE_NAME,header=FALSE)
+dat <- read.csv(DATA_FILE_NAME,header=TRUE)
 datMeans <- colMeans(dat)
 datSds <- apply(dat,2,sd)
 datSds[datSds==0] <- 1 # for cols with no variance

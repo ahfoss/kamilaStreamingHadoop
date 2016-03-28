@@ -74,9 +74,11 @@ sessionInfo()
 
 Please specify the data set used and job number in the original .Rnw document:
 <<uservals>>=
-dataName='../csv/small2clust_rmvna_norm.csv'
-JOBID='5203020'
-
+# The full data set file name
+dataName = '../csv/small2clust_rmvna_norm.csv'
+JOBID = '5203020'
+# A subsampled version of the data set suitable for plotting, ~1000 observations
+subsampleData = '../csv/small2clust_rmvna_norm.csv'
 @
 
 \newpage
@@ -95,7 +97,7 @@ outputFileName <- paste('myoutput-',JOBID,sep='')
 
 <<printBasicDataInfo,echo=FALSE,results='asis'>>=
 print(
-  xtable(varInfo),
+  xtable(varInfo,caption="Note: Mean and standard deviation reported before standardizing to mean 0 and sd 1"),
   include.rownames=FALSE
 )
 @
@@ -115,23 +117,41 @@ runInfo <- data.frame(
   wss = NA
 )
 
+objValues <- list()
+
 for (i in 1:length(runDirs)) {
+  # Get names of this run's iteration-specific directories
   iterDirs_i <- list.files(
     path = file.path('..',outputFileName,runDirs[i]),
-    pattern = 'iter_[0-9]+'
+    pattern = 'iter_[0-9]+',
+    full.names = TRUE
   )
+
+  # Get number of iterations, and objective function from final iteration
+  nIter_i <- length(iterDirs_i)
+  sortedIterDirs <- iterDirs_i[order(nchar(iterDirs_i), iterDirs_i)]
+  objFileName <- list.files(
+    path = iterDirs_i[[nIter_i]],
+    pattern = 'currentObjective',
+    full.names = TRUE
+  )
+  objValues[[i]] <- read.table(objFileName,sep=" ")
+
+  # Get total wss file pathways
   totalWssFile <- list.files(
     path = file.path('..',outputFileName,runDirs[i],'stats'),
     pattern = 'totalWss.txt',
     full.names = TRUE
   )
+
+  # Get pathway to cluster-specific info
   clusterSsFiles <- list.files(
     path = file.path('..',outputFileName,runDirs[i],'stats'),
     pattern = 'stats.tsv',
     full.names = TRUE
   )
-  #print(iterDirs_i)
-  #print(totalWssFile)
+
+  # Log info in data frame
   runInfo$numIter[i] <- length(iterDirs_i)
   runInfo$numClust[i] <- nrow(read.table(clusterSsFiles))
   runInfo$wss[i] <- read.table(totalWssFile)
@@ -145,108 +165,76 @@ print(
 )
 @
 
+\newpage
 \section{Cluster info}
 
+\subsection{Overall Clustering Stats}
 % size, wss, other measures for each cluster, bss
 % table with cluster by row, stat by column
+<<clustinf,echo=FALSE>>=
+best_run <- which.min(runInfo$wss)
+
+clustInfoTab <- read.table(file.path('..',outputFileName,paste('run_',best_run,sep=''),'stats','stats.tsv'))
+colnames(clustInfoTab) <- c('Cluster Number','Cluster Size','Within-Cluster Sum of Squares')
+@
+
+<<printClustInf, echo=FALSE, results='asis'>>=
+print(
+  xtable(
+    clustInfoTab,
+    digits=c(0,0,0,2),
+    caption=paste('Cluster-specific information for the best k-means run, run ', best_run, '.', sep='')
+  ),
+  include.rownames=FALSE
+)
+@
+
+\subsection{Variable-Specific Clustering Stats}
 
 % variable specific cluster info: mean, sd, min, max
 % table with cluster by row, stat by column, one table per variable
 
 % pairs plot for first 4 pcs, show final cluster locations
 
+\subsection{Convergence Info}
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.9\textwidth]{../summary/kmeansPlot_5203020}
+\end{center}
+\caption{The evolution of the centroid position in the best run. Filled circles denote centroids, with the contained number denoting iteration number. Individual observations (random subset) are plotted with hollow circles, with final cluster membership given by color of the plotting character.}
+\end{figure}
 % Show evolution of centroids for best run, PCs 1 and 2 as implemented in viz script
 
 % ||B_i - B_{i-1}|| line plot -- value versus iteration number
 % best run in black, other runs in gray
+\begin{figure}
+\begin{center}
+<<paramDiffs,echo=FALSE>>=
+maxObjValue <- max(sapply(objValues,max))
+maxNumIter  <- max(sapply(objValues,length))
+par(mar = c(5,5,4,2) + 0.1)
+plot(
+  1:maxNumIter,
+  ylim = c(0,maxObjValue),
+  type = 'n',
+  xlab = 'Iteration Number',
+  ylab = expression(Sigma ~ bgroup("|", mu[i] ~ - ~ mu[i-1], "|"))
+)
+for (i in 1:length(objValues)) {
+  if (i == best_run) {
+    lineCol <- 'black'
+  } else {
+    lineCol <- 'gray'
+  }
+  lines(1:length(objValues[[i]]),objValues[[i]],col=lineCol)
+}
+@
+\end{center}
+\caption{Plot of L1 distance between centroids in successive iterations. The final selected run is plotted in black, while other runs are plotted in gray.}
+\end{figure}
 
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%% Syntax for generating a figure %%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%\begin{figure}
-%\begin{center}
-%\includegraphics[height=4cm]{path}
-%\end{center}
-%\caption{}
-%\label{fig:}
-%\end{figure}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%% Syntax for generating xtable  %%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%<<sampleXtable,results='asis',echo=FALSE>>=
-%sampleDf <- data.frame(n1=rnorm(5),pois1=rpois(5,10))
-%xtable(sampleDf,caption='Sample Table',label='tab:')
-%@
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%% Syntax for generating table %%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%\begin{table}
-%\begin{tabular}{|lcr|}
-%\hline
-%  & \multicolumn{2}{|c|}{Multicolumn text} \\
-%\hline
-%  m=1  &  eating                 & m=9  \\
-%  m=2  &  getting in/out of bed  & m=10 \\
-%  \multirow{3}{*}{Multirow}  &  getting in/out of bed  & m=10 \\
-%    &  getting in/out of bed  & m=10 \\
-%    &  getting in/out of bed  & m=10 \\
-%\hline
-%\end{tabular}
-%\caption{}
-%\label{tab:}
-%\end{table}
-
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Syntax for algorithm (see above) %%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%\begin{algorithm}
-%\caption{KAMILA}
-%\begin{algorithmic}
-%\FOR{User-specified number of initializations}
-%\STATE{Initialize $\hat{\boldsymbol{\mu}}_g^{(0)}, \hat{\boldsymbol{\theta}}_{gq}^{(0)} \; \forall g,q$ }
-%\REPEAT
-%  \STATE{PARTITION STEP}
-%  \bindent
-%    \STATE{ $d_{ig}^{(t)} \leftarrow \text{dist}(\mathbf{v}_i, \hat{\boldsymbol{\mu}}_g^{(t)})$ }
-%    \STATE{ $r_i^{(t)} \leftarrow \underset{g}{\text{min}}(d_{ig}^{(t)})$ }
-%    \STATE{ $\hat{f}_{\mathbf{V}}^{(t)} \leftarrow \text{RadialKDE}(\mathbf{r}^{(t)})$ }
-%    \STATE{ $c_{ig}^{(t)} \leftarrow \widehat{Pr}(\mathbf{w}_i \, | \, \text{observation $i \in$ population $g$})$ }
-%    \STATE{ $H_i^{(t)}(g) \leftarrow   \log \left[ \hat{f}_{\mathbf{V}}^{(t)}(d_{ig}^{(t)}) \right] + \log \left[ c_{ig}^{(t)} \right]$ }
-%    \STATE{ Assign observation $i$ to population $\underset{g}{\text{argmax}} \{ H_i^{(t)}(g) \}$}
-%  \eindent
-%  \STATE{ESTIMATION STEP}
-%  \bindent
-%    \STATE{ Calculate $ \hat{\boldsymbol{\mu}}_g^{(t+1)}$ and $\hat{\boldsymbol{\theta}}_{gq}^{(t+1)}$}
-%  \eindent
-%\UNTIL{Convergence }
-%\STATE{ $ObjectiveFun \leftarrow \sum_{i=1}^N \underset{g}{\text{max}} \{ H_i^{(final)}(g) \} $ }
-%\ENDFOR
-%\STATE{ Output partition that maximizes $ObjectiveFun$ }
-%\end{algorithmic}
-%\label{alg:kamila}
-%\end{algorithm}
-
-
-
-%\begin{filecontents}{biblio.bib}
-%@book{
-%  author99
-% ,title = {My Great Book}
-% ,author = {Samuel Clemens}
-% ,location = {Springfield}
-% ,publisher= {Random House Books}
-% ,date = 1999
-%}
-%\end{filecontents}
-
-%\bibliography{biblio}
 
 
 \end{document}
