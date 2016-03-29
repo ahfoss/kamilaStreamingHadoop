@@ -76,7 +76,7 @@ Please specify the data set used and job number in the original .Rnw document:
 <<uservals>>=
 # The full data set file name
 dataName = '../csv/small2clust_rmvna_norm.csv'
-JOBID = '5203020'
+JOBID = '5220624'
 # A subsampled version of the data set suitable for plotting, ~1000 observations
 subsampleData = '../csv/small2clust_rmvna_norm.csv'
 @
@@ -174,7 +174,13 @@ print(
 <<clustinf,echo=FALSE>>=
 best_run <- which.min(runInfo$wss)
 
-clustInfoTab <- read.table(file.path('..',outputFileName,paste('run_',best_run,sep=''),'stats','stats.tsv'))
+allStats  <- read.table(
+  file.path('..',outputFileName,paste('run_',best_run,sep=''),'stats','stats.tsv'),
+  header = TRUE,
+  stringsAsFactors = FALSE
+)
+
+clustInfoTab <- allStats[,1:3]
 colnames(clustInfoTab) <- c('Cluster Number','Cluster Size','Within-Cluster Sum of Squares')
 @
 
@@ -189,18 +195,47 @@ print(
 )
 @
 
+\newpage
 \subsection{Variable-Specific Clustering Stats}
 
 % variable specific cluster info: mean, sd, min, max
 % table with cluster by row, stat by column, one table per variable
+<<varStats,echo=FALSE>>=
+minList <- strsplit(allStats[,4],split=',')
+minMat  <- matrix(as.numeric(unlist(minList)),byrow=TRUE,nrow=length(minList),ncol=length(minList[[1]]))
+meanList <- strsplit(allStats[,5],split=',')
+meanMat  <- matrix(as.numeric(unlist(meanList)),byrow=TRUE,nrow=length(meanList),ncol=length(meanList[[1]]))
+maxList <- strsplit(allStats[,6],split=',')
+maxMat  <- matrix(as.numeric(unlist(maxList)),byrow=TRUE,nrow=length(maxList),ncol=length(maxList[[1]]))
+@
+
+<<showVarStats,echo=FALSE,results='asis'>>=
+for (varNum in 1:ncol(minMat)) {
+print(
+  xtable(
+    data.frame(
+      clusterNumber = 1:nrow(minMat),
+      min = minMat[,varNum],
+      mean = meanMat[,varNum],
+      max = maxMat[,varNum]
+    ),
+    digits = c(0,0,3,3,3),
+    caption = paste('Cluster-specific stats for variable',varNum,'.')
+  ),
+  include.rownames = FALSE
+)
+}
+@
 
 % pairs plot for first 4 pcs, show final cluster locations
 
+\clearpage
+\newpage
 \subsection{Convergence Info}
 
-\begin{figure}
+\begin{figure}[!h]
 \begin{center}
-\includegraphics[width=0.9\textwidth]{../summary/kmeansPlot_5203020}
+\includegraphics[width=0.8\textwidth]{../summary/kmeansPlot_5203020}
 \end{center}
 \caption{The evolution of the centroid position in the best run. Filled circles denote centroids, with the contained number denoting iteration number. Individual observations (random subset) are plotted with hollow circles, with final cluster membership given by color of the plotting character.}
 \end{figure}

@@ -31,6 +31,8 @@ while(length(line <- readLines(f,n=1)) > 0) {
     closestClust
    ,'\t'
    ,squaredEucDist
+   ,'\t'
+   ,paste(vec,collapse=',')
    ,'\n'
    ,sep=''
   )

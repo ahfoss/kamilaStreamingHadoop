@@ -191,8 +191,6 @@ $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -ls /data
 #         stats/
 #     ...
 #     best_run/
-#         kmeans_summary.txt
-#         finalMeans.RData
 #         stats.tsv
 #         allWss.txt
 #
@@ -316,8 +314,8 @@ do
     $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -get run_"$runNumber"/hadoop_stats/part-* ./myoutput-$SLURM_JOBID/run_$runNumber/stats/
     
     # save stats file
-    echo 'ClusterNumber, ClusterSize, SSQ'  > ./myoutput-$SLURM_JOBID/run_$runNumber/stats/stats.tsv
-    cat ./myoutput-$SLURM_JOBID/run_$runNumber/stats/* | sort -n >> ./myoutput-$SLURM_JOBID/run_$runNumber/stats/stats.tsv
+    echo  -e 'ClusterNumber\tClusterSize\tSSQ\tminvec\tmeanvec\tmaxvec'  > ./myoutput-$SLURM_JOBID/run_$runNumber/stats/stats.tsv
+    cat ./myoutput-$SLURM_JOBID/run_$runNumber/stats/part-* | sort -n >> ./myoutput-$SLURM_JOBID/run_$runNumber/stats/stats.tsv
     echo
     echo "Show summary stats file contents:"
     cat ./myoutput-$SLURM_JOBID/run_$runNumber/stats/stats.tsv
