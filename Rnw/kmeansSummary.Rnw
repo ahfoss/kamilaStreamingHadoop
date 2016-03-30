@@ -64,6 +64,7 @@
 #opts_knit$set(tidy=TRUE)
 suppressMessages(library(xtable))
 suppressMessages(library(tools))
+suppressMessages(library(MASS)) # for ginv()
 #suppressMessages(library(ggplot2))
 sessionInfo()
 @
@@ -76,7 +77,7 @@ Please specify the data set used and job number in the original .Rnw document:
 <<uservals>>=
 # The full data set file name
 dataName = '../csv/small2clust_rmvna_norm.csv'
-JOBID = '5220624'
+JOBID = '5224162'
 # A subsampled version of the data set suitable for plotting, ~1000 observations
 subsampleData = '../csv/small2clust_rmvna_norm.csv'
 @
@@ -119,48 +120,54 @@ runInfo <- data.frame(
 
 objValues <- list()
 
+iterDirs <- list()
 for (i in 1:length(runDirs)) {
   # Get names of this run's iteration-specific directories
-  iterDirs_i <- list.files(
+  iterDirs[[i]] <- list.files(
     path = file.path('..',outputFileName,runDirs[i]),
     pattern = 'iter_[0-9]+',
     full.names = TRUE
   )
+  runInfo$numIter[i] <- length(iterDirs[[i]])
+}
 
+for (i in 1:length(runDirs)) {
   # Get number of iterations, and objective function from final iteration
-  nIter_i <- length(iterDirs_i)
-  sortedIterDirs <- iterDirs_i[order(nchar(iterDirs_i), iterDirs_i)]
+  nIter_i <- length(iterDirs[[i]])
+  sortedIterDirs <- iterDirs[[i]][order(nchar(iterDirs[[i]]), iterDirs[[i]])]
   objFileName <- list.files(
-    path = iterDirs_i[[nIter_i]],
+    path = iterDirs[[i]][[nIter_i]],
     pattern = 'currentObjective',
     full.names = TRUE
   )
   objValues[[i]] <- read.table(objFileName,sep=" ")
+}
 
+for (i in 1:length(runDirs)) {
   # Get total wss file pathways
   totalWssFile <- list.files(
     path = file.path('..',outputFileName,runDirs[i],'stats'),
     pattern = 'totalWss.txt',
     full.names = TRUE
   )
+  runInfo$wss[i] <- read.table(totalWssFile)
+}
 
+for (i in 1:length(runDirs)) {
   # Get pathway to cluster-specific info
   clusterSsFiles <- list.files(
     path = file.path('..',outputFileName,runDirs[i],'stats'),
     pattern = 'stats.tsv',
     full.names = TRUE
   )
-
   # Log info in data frame
-  runInfo$numIter[i] <- length(iterDirs_i)
-  runInfo$numClust[i] <- nrow(read.table(clusterSsFiles))
-  runInfo$wss[i] <- read.table(totalWssFile)
+  runInfo$numClust[i] <- nrow(read.table(clusterSsFiles)) - 1
 }
 @
 
 <<printRunInfo, echo=FALSE, results='asis'>>=
 print(
-  xtable(runInfo,digits=2),
+  xtable(runInfo,digits=c(0,0,0,0,2)),
   include.rownames=FALSE
 )
 @
@@ -194,52 +201,84 @@ print(
   include.rownames=FALSE
 )
 @
-
-\newpage
-\subsection{Variable-Specific Clustering Stats}
-
-% variable specific cluster info: mean, sd, min, max
-% table with cluster by row, stat by column, one table per variable
-<<varStats,echo=FALSE>>=
-minList <- strsplit(allStats[,4],split=',')
-minMat  <- matrix(as.numeric(unlist(minList)),byrow=TRUE,nrow=length(minList),ncol=length(minList[[1]]))
-meanList <- strsplit(allStats[,5],split=',')
-meanMat  <- matrix(as.numeric(unlist(meanList)),byrow=TRUE,nrow=length(meanList),ncol=length(meanList[[1]]))
-maxList <- strsplit(allStats[,6],split=',')
-maxMat  <- matrix(as.numeric(unlist(maxList)),byrow=TRUE,nrow=length(maxList),ncol=length(maxList[[1]]))
-@
-
-<<showVarStats,echo=FALSE,results='asis'>>=
-for (varNum in 1:ncol(minMat)) {
-print(
-  xtable(
-    data.frame(
-      clusterNumber = 1:nrow(minMat),
-      min = minMat[,varNum],
-      mean = meanMat[,varNum],
-      max = maxMat[,varNum]
-    ),
-    digits = c(0,0,3,3,3),
-    caption = paste('Cluster-specific stats for variable',varNum,'.')
-  ),
-  include.rownames = FALSE
-)
-}
-@
-
 % pairs plot for first 4 pcs, show final cluster locations
 
 \clearpage
 \newpage
 \subsection{Convergence Info}
 
-\begin{figure}[!h]
-\begin{center}
-\includegraphics[width=0.8\textwidth]{../summary/kmeansPlot_5203020}
-\end{center}
-\caption{The evolution of the centroid position in the best run. Filled circles denote centroids, with the contained number denoting iteration number. Individual observations (random subset) are plotted with hollow circles, with final cluster membership given by color of the plotting character.}
-\end{figure}
-% Show evolution of centroids for best run, PCs 1 and 2 as implemented in viz script
+<<centroidIter>>=
+# get subsampled data and rescale
+subsamp <- read.csv(subsampleData)
+datMeans <- colMeans(subsamp)
+datSds <- apply(subsamp,2,sd)
+datSds[datSds==0] <- 1 # for cols with no variance
+subsamp <- scale(subsamp, center=datMeans, scale=datSds)
+
+# SVD of data
+svdDat <- svd(subsamp)
+transMat <- ginv(diag(svdDat$d) %*% t(svdDat$v))
+
+# get centroid file names in appropriate format
+centroidFileNames <- list.files(
+  file.path('..',outputFileName,paste('run_',best_run,sep='')),
+  pattern = 'currentMeans_i',
+  recursive = TRUE,
+  full.names = TRUE
+)
+centroidFileNames <- as.vector(centroidFileNames)
+centroidFileNames <- centroidFileNames[order(nchar(centroidFileNames), centroidFileNames)]
+
+# read in centroids and scale by dataset's means
+allCentroids <- lapply(
+  centroidFileNames,
+  FUN = function(ff) {
+    load(ff)
+    dd=t(as.data.frame(myMeans)) 
+    dd <- scale(dd, center=datMeans, scale=datSds)
+    rownames(dd) <- paste('Clust',1:nrow(dd))
+    colnames(dd) <- paste('Dim',1:ncol(dd))
+    return(dd)
+  }
+)
+
+thisNumIter <- length(allCentroids)
+thisNumClust <- nrow(allCentroids[[1]])
+
+# distinct colors for the clusters
+myColors <- rainbow(thisNumClust)
+myColorsAlpha <- rainbow(thisNumClust,alpha=0.5)
+
+# Color points by nearest cluster
+# Inefficient one-liner implementation: fix this
+datColors <- t(apply(
+  subsamp,
+  1,
+  function(rr) which.min(as.matrix(dist(rbind(rr,allCentroids[[thisNumIter]])))[-1,1])
+))
+
+# create plot
+plot(
+  subsamp %*% transMat,
+  xlab='Principal Component 1',
+  ylab='Principal Component 2',
+  col = myColorsAlpha[datColors]
+)
+
+for (i in 1:thisNumIter) {
+  transCentroids <- allCentroids[[i]] %*% transMat
+  points(transCentroids, pch=19, col=myColors, cex=2.5)
+  points(transCentroids, pch=1, col='black', cex=2.5, lwd=2)
+  text(transCentroids, labels=i,cex=0.8)
+}
+@
+
+% Show evolution of centroids for best run, over scatterplot of PCs 1 and 2
+%\begin{figure}[!h]
+%\begin{center}
+%\end{center}
+%\caption{The evolution of the centroid position in the best run. Filled circles denote centroids, with the contained number denoting iteration number. Individual observations (random subset) are plotted with hollow circles, with final cluster membership given by color of the plotting character.}
+%\end{figure}
 
 % ||B_i - B_{i-1}|| line plot -- value versus iteration number
 % best run in black, other runs in gray
@@ -269,6 +308,39 @@ for (i in 1:length(objValues)) {
 \caption{Plot of L1 distance between centroids in successive iterations. The final selected run is plotted in black, while other runs are plotted in gray.}
 \end{figure}
 
+
+
+\newpage
+\section{Variable-Specific Clustering Stats}
+
+% variable specific cluster info: mean, sd, min, max
+% table with cluster by row, stat by column, one table per variable
+<<varStats,echo=FALSE>>=
+minList <- strsplit(allStats[,4],split=',')
+minMat  <- matrix(as.numeric(unlist(minList)),byrow=TRUE,nrow=length(minList),ncol=length(minList[[1]]))
+meanList <- strsplit(allStats[,5],split=',')
+meanMat  <- matrix(as.numeric(unlist(meanList)),byrow=TRUE,nrow=length(meanList),ncol=length(meanList[[1]]))
+maxList <- strsplit(allStats[,6],split=',')
+maxMat  <- matrix(as.numeric(unlist(maxList)),byrow=TRUE,nrow=length(maxList),ncol=length(maxList[[1]]))
+@
+
+<<showVarStats,echo=FALSE,results='asis'>>=
+for (varNum in 1:ncol(minMat)) {
+print(
+  xtable(
+    data.frame(
+      clusterNumber = 1:nrow(minMat),
+      min = minMat[,varNum],
+      mean = meanMat[,varNum],
+      max = maxMat[,varNum]
+    ),
+    digits = c(0,0,3,3,3),
+    caption = paste('Cluster-specific stats for variable',varNum,'.')
+  ),
+  include.rownames = FALSE
+)
+}
+@
 
 
 

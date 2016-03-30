@@ -63,13 +63,13 @@ DATADIR=csv
 DATA_DIM=5
 
 # number of clusters to search for
-NUM_CLUST=10
+NUM_CLUST=15
 # NUM_TASKS should be less than or equal to the # clusters
-NUM_TASKS=4
+NUM_TASKS=9
 # Number of initializations of the kmeans algorithm
-NUM_INIT=3
+NUM_INIT=5
 # Max number of iterations per initialization
-MAX_NITER=8
+MAX_NITER=3
 # Tolerance for determining convergence; see README.txt
 # Converted to float
 EPSILON=0.01
