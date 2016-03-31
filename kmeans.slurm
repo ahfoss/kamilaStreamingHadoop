@@ -9,19 +9,19 @@
 
 ##############################
 # Debugging SLURM options
-##SBATCH --partition=debug
-##SBATCH --time=00:50:00
-##SBATCH --nodes=2
+#SBATCH --partition=debug
+#SBATCH --time=00:50:00
+#SBATCH --nodes=2
 ##############################
 
 ##############################
 # Full SLURM options
-#SBATCH --partition=general-compute
-#SBATCH --time=20:50:00
-#SBATCH --nodes=2
-#Specifies that the job will be requeued after a node failure.
-#The default is that the job will not be requeued.
-#SBATCH --requeue
+##SBATCH --partition=general-compute
+##SBATCH --time=20:50:00
+##SBATCH --nodes=2
+##Specifies that the job will be requeued after a node failure.
+##The default is that the job will not be requeued.
+##SBATCH --requeue
 ##############################
 ##SBATCH --constraint=CPU-E5645
 ##SBATCH --ntasks-per-node=12
@@ -55,21 +55,23 @@ module list
 # Date file is ./$DATADIR/$DATANAME
 
 # file to be clustered
-DATANAME=1987_rmvna_norm.csv
+#DATANAME=1987_rmvna_norm.csv
+DATANAME=small2clust_rmvna_norm.csv
 # directory in which data file is stored
 DATADIR=csv
 
 # number of variables in the data set
-DATA_DIM=10
+#DATA_DIM=10
+DATA_DIM=5
 
 # number of clusters to search for
-NUM_CLUST=10
+NUM_CLUST=20
 # NUM_TASKS should be less than or equal to the # clusters
-NUM_TASKS=6
+NUM_TASKS=10
 # Number of initializations of the kmeans algorithm
 NUM_INIT=3
 # Max number of iterations per initialization
-MAX_NITER=8
+MAX_NITER=3
 # Tolerance for determining convergence; see README.txt
 # Converted to float
 EPSILON=0.01
@@ -256,7 +258,9 @@ do
       
         # Run script on output; km_intermediary.R outputs currentMeans.RData, as well
         # as the objective function for the current iteration.
+	#ls -lh $TMP_DIR
         objectiveArray[$i]=`cat ./myoutput-$SLURM_JOBID/run_$runNumber/iter_$i/part-* | sort -n | Rscript R/km_intermediary.R $EPSILON $SLURM_JOBID $runNumber $i $TMP_DIR`
+	#ls -lh $TMP_DIR
   
         # break kmeans run early if objective is empty
         if [ ${objectiveArray[$i]} = 'NA' ]
@@ -273,7 +277,9 @@ do
         echo "Current value of objective array is "${objectiveArray[*]}
         echo ${objectiveArray[*]}
         echo ${objectiveArray[*]} > ./myoutput-$SLURM_JOBID/run_$runNumber/iter_$i/currentObjective_i$(expr $i + 1).txt
+        #ls -lh ./myoutput-$SLURM_JOBID/run_$runNumber/iter_$i/currentMeans_i$(expr $i + 1).RData
         cp $TMP_DIR/currentMeans.RData ./myoutput-$SLURM_JOBID/run_$runNumber/iter_$i/currentMeans_i$(expr $i + 1).RData
+        #ls -lh ./myoutput-$SLURM_JOBID/run_$runNumber/iter_$i/currentMeans_i$(expr $i + 1).RData
       
         # check if convergence criteria is met
         if (( $(bc <<< "${objectiveArray[$i]} < $EPSILON") ))

@@ -24,14 +24,13 @@ myMeans <- list()
 
 while (length(line <- readLines(f,n=1)) > 0) {
   this_kvpair <- unlist(strsplit(line,split="\t"))
-  myMeans[[this_kvpair[1]]] <- eval(parse(text=this_kvpair[2]))
+  myMeans[[as.integer(this_kvpair[1])]] <- eval(parse(text=this_kvpair[2]))
 }
 
 if (length(myMeans) == 0) {
   cat('NA')
   stop(paste('Stopped in iteration ',CURR_IND,'; no means detected.', sep=''))
 }
-save(myMeans,file=file.path(OUT_DIR,'currentMeans.RData'))
 
 # check convergence using input
 currentMeans <- myMeans
@@ -52,16 +51,23 @@ prevMeans <- myMeans
 dataDim <- length(prevMeans[[1]])
 for (i in 1:length(currentMeans)) {
   if (length(currentMeans[[i]]) == 0) {
+    #print(currentMeans)
     currentMeans[[i]] <- genMean(dataDim) # runif(n=dataDim, min = -2, max = 2)
-    warning('Empty mean detected in intermediary script; regenerating.')
+    #print(currentMeans)
+    warning('Empty internal centroid detected in intermediary script; regenerating: number of empty elements is now ',sum(vapply(currentMeans,is.null,NA)),'.')
   }
 }
 # make sure to initialize new replacement means if the last clusters were empty
 lenPrevMeans <- length(prevMeans)
 while( length(currentMeans) < lenPrevMeans ) {
+  #print(currentMeans)
   currentMeans[[length(currentMeans)+1]] <- genMean(dataDim) # runif(n=dataDim, min = -2, max = 2)
-  warning('Empty mean detected in intermediary script; regenerating.')
+  #print(currentMeans)
+  warning('Empty final centroid detected in intermediary script; regenerating: length is now ',length(currentMeans),'.')
 }
+
+myMeans <- currentMeans
+save(myMeans,file=file.path(OUT_DIR,'currentMeans.RData'))
 
 # calculate and output the objective function
 l1_norm <- function(x1, x2) {
