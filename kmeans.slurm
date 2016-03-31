@@ -9,19 +9,19 @@
 
 ##############################
 # Debugging SLURM options
-#SBATCH --partition=debug
-#SBATCH --time=00:50:00
-#SBATCH --nodes=2
+##SBATCH --partition=debug
+##SBATCH --time=00:50:00
+##SBATCH --nodes=2
 ##############################
 
 ##############################
 # Full SLURM options
-##SBATCH --partition=general-compute
-##SBATCH --time=20:50:00
-##SBATCH --nodes=2
-##Specifies that the job will be requeued after a node failure.
-##The default is that the job will not be requeued.
-##SBATCH --requeue
+#SBATCH --partition=general-compute
+#SBATCH --time=20:50:00
+#SBATCH --nodes=2
+#Specifies that the job will be requeued after a node failure.
+#The default is that the job will not be requeued.
+#SBATCH --requeue
 ##############################
 ##SBATCH --constraint=CPU-E5645
 ##SBATCH --ntasks-per-node=12
@@ -55,21 +55,21 @@ module list
 # Date file is ./$DATADIR/$DATANAME
 
 # file to be clustered
-DATANAME=small2clust_rmvna_norm.csv
+DATANAME=1987_rmvna_norm.csv
 # directory in which data file is stored
 DATADIR=csv
 
 # number of variables in the data set
-DATA_DIM=5
+DATA_DIM=10
 
 # number of clusters to search for
-NUM_CLUST=15
+NUM_CLUST=10
 # NUM_TASKS should be less than or equal to the # clusters
-NUM_TASKS=9
+NUM_TASKS=6
 # Number of initializations of the kmeans algorithm
-NUM_INIT=5
+NUM_INIT=3
 # Max number of iterations per initialization
-MAX_NITER=3
+MAX_NITER=8
 # Tolerance for determining convergence; see README.txt
 # Converted to float
 EPSILON=0.01

@@ -6,3 +6,5 @@ tmp_*/
 test-*.out
 Rnw/
 !Rnw/kmeansSummary.Rnw
+procJob.err
+procJob.out

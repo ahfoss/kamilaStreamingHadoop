@@ -71,6 +71,7 @@ numMissingInCol = [0] * numCol
 rowMissingTable = [0] * (numCol + 1)
 
 # process rows
+progress = 0
 firstRow = True
 with open(DATA_FILE_NAME,'r') as inFile, open(outFileName, 'w') as outFile:
     inFileReader  = csv.reader(inFile,  delimiter=',', quotechar='"')
@@ -78,8 +79,9 @@ with open(DATA_FILE_NAME,'r') as inFile, open(outFileName, 'w') as outFile:
     for row in inFileReader:
         if firstRow:
             # write row of headers
-            outFileWriter.writerow(row)
-            headerNames = row
+            fullHeaderNames = row
+            subsettedHeaderNames = [elm for j, elm in enumerate(row) if (j+1) not in RMV_COL]
+            outFileWriter.writerow(subsettedHeaderNames)
             firstRow = False
             continue
         numMissingInRow = 0
@@ -94,6 +96,9 @@ with open(DATA_FILE_NAME,'r') as inFile, open(outFileName, 'w') as outFile:
         if numMissingInRow == 0:
             # write row minus flagged columns
             outFileWriter.writerow([elm for j, elm in enumerate(row) if (j+1) not in RMV_COL])
+        progress += 1
+        if progress % 1000 == 0:
+            print '%d lines processed...' % (progress)
 
 print "rowMissingTable"
 print rowMissingTable
@@ -112,6 +117,6 @@ with open(outFileNameColLog, 'w') as outCol:
     outColWriter = csv.writer(outCol, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
     outColWriter.writerow(['Column index','Number of missing values in column'])
     for i, elm in enumerate(numMissingInCol):
-        outColWriter.writerow([i+1, headerNames[i], elm])
+        outColWriter.writerow([i+1, fullHeaderNames[i], elm])
 
 

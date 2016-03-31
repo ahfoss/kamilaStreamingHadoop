@@ -65,6 +65,7 @@ count = 0
 print
 print "Calculating means....."
 
+progress = 0
 firstRow = True
 with open(DATA_FILE_NAME, 'r') as inFile:
     inFileReader = csv.reader(inFile, delimiter=',', quotechar='"')
@@ -78,12 +79,17 @@ with open(DATA_FILE_NAME, 'r') as inFile:
         sum1 += np.asarray(row, dtype=np.float64)
         # increment count
         count += 1
+        progress += 1
+        if progress % 1000 == 0:
+            print '%d lines processed...' % (progress) 
 means = sum1 / count
+numSample = progress
 
 print "DONE"
 print
 print "Calculating variances....."
 
+progress = 0
 firstRow = True
 sum2 = np.zeros(numCol, dtype=np.float64)
 with open(DATA_FILE_NAME, 'r') as inFile:
@@ -95,6 +101,9 @@ with open(DATA_FILE_NAME, 'r') as inFile:
             continue
         # add rows to sum1
         sum2 += np.power(np.asarray(row, dtype=np.float64) - means, 2)
+        progress += 1
+        if progress % 1000 == 0:
+            print '%d/%d lines processed...' % (progress,numSample) 
 stdevs = np.sqrt(sum2 / (count - 1))
 
 # Give warning if variance is zero
@@ -106,6 +115,7 @@ print "DONE"
 print
 print "Writing to primary output file..."
 
+progress = 0
 firstRow = True
 with open(DATA_FILE_NAME, 'r') as inFile, open(outFileName, 'w') as outFile:
     inFileReader = csv.reader(inFile, delimiter=',', quotechar='"')
@@ -118,6 +128,9 @@ with open(DATA_FILE_NAME, 'r') as inFile, open(outFileName, 'w') as outFile:
             continue
         # handle cases where variance is zero
         outFileWriter.writerow( [ 0 if s==0 else (x-m)/s for x,m,s in zip(np.asarray(row,dtype=np.float64),means,stdevs) ] )
+        progress += 1
+        if progress % 1000 == 0:
+            print '%d/%d lines processed...' % (progress,numSample) 
 
 print "DONE"
 print
