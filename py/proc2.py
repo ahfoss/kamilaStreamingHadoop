@@ -133,7 +133,7 @@ with open(DATA_FILE_NAME, 'r') as inFile, open(outFileName, 'w') as outFile:
             firstRow = False
             continue
         # handle cases where variance is zero
-        outFileWriter.writerow( [ 0 if s==0 else (x-m)/s for x,m,s in zip(np.asarray(row,dtype=np.float64),means,stdevs) ] )
+        outFileWriter.writerow( [ 0.0 if s==0 else '{:0.8f}'.format((x-m)/s) for x,m,s in zip(np.asarray(row,dtype=np.float64),means,stdevs) ] )
         progress += 1
         if progress % 10000 == 0:
             print '%d/%d lines processed...' % (progress,numSample) 
