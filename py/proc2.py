@@ -60,6 +60,9 @@ print "Outfile: " + outFileName
 print "Number of columns: " + str(numCol)
 
 sum1 = np.zeros(numCol, dtype=np.float64)
+mins = np.ones(numCol) * np.inf
+maxs = np.ones(numCol) * (-np.inf)
+#np.fmin(np.ones(3) * np.inf,np.ones(3))
 count = 0
 
 print
@@ -76,11 +79,14 @@ with open(DATA_FILE_NAME, 'r') as inFile:
             firstRow = False
             continue
         # add rows to sum1
-        sum1 += np.asarray(row, dtype=np.float64)
+        rowFloat = np.asarray(row, dtype=np.float64)
+        sum1 += rowFloat
+        mins = np.fmin(mins, rowFloat)
+        maxs = np.fmax(maxs, rowFloat)
         # increment count
         count += 1
         progress += 1
-        if progress % 1000 == 0:
+        if progress % 10000 == 0:
             print '%d lines processed...' % (progress) 
 means = sum1 / count
 numSample = progress
@@ -102,7 +108,7 @@ with open(DATA_FILE_NAME, 'r') as inFile:
         # add rows to sum1
         sum2 += np.power(np.asarray(row, dtype=np.float64) - means, 2)
         progress += 1
-        if progress % 1000 == 0:
+        if progress % 10000 == 0:
             print '%d/%d lines processed...' % (progress,numSample) 
 stdevs = np.sqrt(sum2 / (count - 1))
 
@@ -129,7 +135,7 @@ with open(DATA_FILE_NAME, 'r') as inFile, open(outFileName, 'w') as outFile:
         # handle cases where variance is zero
         outFileWriter.writerow( [ 0 if s==0 else (x-m)/s for x,m,s in zip(np.asarray(row,dtype=np.float64),means,stdevs) ] )
         progress += 1
-        if progress % 1000 == 0:
+        if progress % 10000 == 0:
             print '%d/%d lines processed...' % (progress,numSample) 
 
 print "DONE"
@@ -139,9 +145,9 @@ print "Writing variable statistics..."
 # write out means, std
 with open(outFileNameStats, 'w') as outStats:
     outStatsWriter = csv.writer(outStats, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-    outStatsWriter.writerow(['Variable Index', 'Variable Name', 'Mean', 'Standard Deviation'])
+    outStatsWriter.writerow(['Variable Index', 'Variable Name', 'Mean', 'Standard Deviation','Min','Max'])
     for i in xrange(numCol):
-        outStatsWriter.writerow([i+1, headerNames[i], means[i], stdevs[i]])
+        outStatsWriter.writerow([i+1, headerNames[i], means[i], stdevs[i],mins[i],maxs[i]])
 
 print "DONE"
 

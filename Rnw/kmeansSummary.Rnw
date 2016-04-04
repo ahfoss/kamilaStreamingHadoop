@@ -90,9 +90,13 @@ subsampleData = '../csv/subsampled_1500_1987_rmvna_norm.csv'
 
 <<fs,echo=FALSE>>=
 fileSize <- file.size(dataName)
+spl <- strsplit(dataName,split='norm')[[1]]
+rowlogName <- paste(spl[1],'rowlog',spl[2],sep='')
+nLines <- read.table(rowlogName,header=TRUE,sep=',')
+nLines <- nLines[1,2]
 @
 
-The data file is \Sexpr{fileSize/1024^3} GiB and \Sexpr{fileSize/1000^3} GB (\Sexpr{fileSize} bytes).
+The data file is \Sexpr{fileSize/1024^3} GiB and \Sexpr{fileSize/1000^3} GB (\Sexpr{fileSize} bytes), with \Sexpr{nLines} data lines.
 
 %%%%%%% Add info on missing vars from preprocessing step
 <<basicDataInfo,echo=FALSE>>=
@@ -106,7 +110,7 @@ outputFileName <- paste('myoutput-',JOBID,sep='')
 print(
   xtable(
     varInfo,
-    digits = c(0,0,0,-2,-2),
+    #digits = c(0,0,0,-2,-2),
     caption=c("Basic Dataset Info","Note: Mean and standard deviation reported before standardizing to mean 0 and sd 1")
   ),
   include.rownames=FALSE

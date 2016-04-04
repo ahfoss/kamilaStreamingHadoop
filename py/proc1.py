@@ -97,7 +97,7 @@ with open(DATA_FILE_NAME,'r') as inFile, open(outFileName, 'w') as outFile:
             # write row minus flagged columns
             outFileWriter.writerow([elm for j, elm in enumerate(row) if (j+1) not in RMV_COL])
         progress += 1
-        if progress % 1000 == 0:
+        if progress % 10000 == 0:
             print '%d lines processed...' % (progress)
 
 print "rowMissingTable"
