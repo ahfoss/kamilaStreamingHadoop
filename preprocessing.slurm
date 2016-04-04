@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH --error=procJob.err
-#SBATCH --output=procJob.out
+#SBATCH --error=preprocessingResults.err
+#SBATCH --output=preprocessingResults.out
 #SBATCH --job-name=procJob
 #SBATCH --cpus-per-task=1
 #SBATCH --nodes=1

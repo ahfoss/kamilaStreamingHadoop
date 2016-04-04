@@ -9,19 +9,19 @@
 
 ##############################
 # Debugging SLURM options
-#SBATCH --partition=debug
-#SBATCH --time=00:50:00
-#SBATCH --nodes=2
+##SBATCH --partition=debug
+##SBATCH --time=00:50:00
+##SBATCH --nodes=2
 ##############################
 
 ##############################
 # Full SLURM options
-##SBATCH --partition=general-compute
-##SBATCH --time=20:50:00
-##SBATCH --nodes=2
-##Specifies that the job will be requeued after a node failure.
-##The default is that the job will not be requeued.
-##SBATCH --requeue
+#SBATCH --partition=general-compute
+#SBATCH --time=50:50:00
+#SBATCH --nodes=2
+#Specifies that the job will be requeued after a node failure.
+#The default is that the job will not be requeued.
+#SBATCH --requeue
 ##############################
 ##SBATCH --constraint=CPU-E5645
 ##SBATCH --ntasks-per-node=12
@@ -55,23 +55,21 @@ module list
 # Date file is ./$DATADIR/$DATANAME
 
 # file to be clustered
-#DATANAME=1987_rmvna_norm.csv
-DATANAME=small2clust_rmvna_norm.csv
+DATANAME=1987_rmvna_norm.csv
 # directory in which data file is stored
 DATADIR=csv
 
 # number of variables in the data set
-#DATA_DIM=10
-DATA_DIM=5
+DATA_DIM=10
 
 # number of clusters to search for
-NUM_CLUST=20
+NUM_CLUST=8
 # NUM_TASKS should be less than or equal to the # clusters
-NUM_TASKS=10
+NUM_TASKS=5
 # Number of initializations of the kmeans algorithm
-NUM_INIT=3
+NUM_INIT=10
 # Max number of iterations per initialization
-MAX_NITER=3
+MAX_NITER=20
 # Tolerance for determining convergence; see README.txt
 # Converted to float
 EPSILON=0.01
@@ -275,7 +273,6 @@ do
         fi
   
         echo "Current value of objective array is "${objectiveArray[*]}
-        echo ${objectiveArray[*]}
         echo ${objectiveArray[*]} > ./myoutput-$SLURM_JOBID/run_$runNumber/iter_$i/currentObjective_i$(expr $i + 1).txt
         #ls -lh ./myoutput-$SLURM_JOBID/run_$runNumber/iter_$i/currentMeans_i$(expr $i + 1).RData
         cp $TMP_DIR/currentMeans.RData ./myoutput-$SLURM_JOBID/run_$runNumber/iter_$i/currentMeans_i$(expr $i + 1).RData
@@ -327,7 +324,10 @@ do
     cat ./myoutput-$SLURM_JOBID/run_$runNumber/stats/stats.tsv
     
     # calculate and store total WSS
-    wssArray[$(($runNumber-1))]=`awk -F'\t' '{ sum += $3 } END { print sum }' ./myoutput-$SLURM_JOBID/run_$runNumber/stats/stats.tsv`
+    #wssArray[$(($runNumber-1))]=`awk -F'\t' 'NR > 1 { sum += $3 } END { print sum }' ./myoutput-$SLURM_JOBID/run_$runNumber/stats/stats.tsv`
+    # awk version above returns zero if no arguments. Rscript below gives 
+    # error as expected.
+    wssArray[$(($runNumber-1))]=`Rscript -e "sdat <- read.table('./myoutput-$SLURM_JOBID/run_$runNumber/stats/stats.tsv',header=TRUE,sep='\t'); cat(sum(sdat[,'SSQ']))"`
     echo "Total WSS for this run is "${wssArray[$(($runNumber-1))]}
     echo ${wssArray[$(($runNumber-1))]} > ./myoutput-$SLURM_JOBID/run_$runNumber/stats/totalWss.txt
     ##################################################
