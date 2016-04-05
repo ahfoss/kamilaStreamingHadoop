@@ -76,11 +76,11 @@ sessionInfo()
 Please specify the data set used and job number in the original .Rnw document:
 <<uservals>>=
 # The full data set file name
-dataName = '../csv/1987_rmvna_norm.csv'
-JOBID = '5240978'
+dataName = '../csv/small2clust_rmvna_norm.csv'
+JOBID = '5260502'
 
 # A subsampled version of the data set suitable for plotting, ~1000 observations
-subsampleData = '../csv/subsampled_1500_1987_rmvna_norm.csv'
+subsampleData = '../csv/small2clust_rmvna_norm.csv'
 @
 
 \newpage
@@ -110,7 +110,7 @@ outputFileName <- paste('myoutput-',JOBID,sep='')
 print(
   xtable(
     varInfo,
-    #digits = c(0,0,0,-2,-2),
+    digits = c(0,0,0,-2,-2,-2,-2),
     caption=c("Basic Dataset Info","Note: Mean and standard deviation reported before standardizing to mean 0 and sd 1")
   ),
   include.rownames=FALSE

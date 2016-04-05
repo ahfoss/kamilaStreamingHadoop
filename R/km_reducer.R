@@ -2,17 +2,17 @@
 
 # Calculate cluster-level means
 # write out file:
-# 1 \t "robj"
-# 2 \t "robj"
+# 1 \t "robj" \t 352
+# 2 \t "robj" \t 42
 # ...
 #
-# where first col is cluster id, and robj is deparsed centroid object
+# where first col is cluster id, and robj is deparsed centroid object (totals, not means), and third column is the count for that cluster.
 
 f <- file("stdin")
 open(f)
 
-logClusterInfo <- function(clusterNum,robj) {
-  cat(clusterNum,'\t',deparse(robj),'\n',sep='')
+logClusterInfo <- function(clusterNum,robj,count) {
+  cat(clusterNum,'\t',deparse(robj),'\t',count,'\n',sep='')
 }
 
 last_key <- Inf
@@ -33,7 +33,7 @@ while(length(line <- readLines(f,n=1)) > 0) {
     # executed when ending a cluster or starting the first
     if (last_key!=Inf) {
       # executed when ending a cluster
-      logClusterInfo(last_key,running_total/clustCount)
+      logClusterInfo(last_key,running_total,clustCount)
     }
     # executed when starting any cluster, including the first
     running_total <- value
@@ -44,7 +44,7 @@ while(length(line <- readLines(f,n=1)) > 0) {
 }
 
 if (last_key == this_key) {
-  logClusterInfo(last_key,running_total/clustCount)
+  logClusterInfo(last_key,running_total,clustCount)
 }
 
 

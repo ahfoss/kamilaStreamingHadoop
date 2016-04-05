@@ -4,6 +4,7 @@ config-*/
 myoutput-*/
 tmp_*/
 test-*.out
+kmeansResults-*.out
 Rnw/
 !Rnw/kmeansSummary.Rnw
 preprocessingResults.err

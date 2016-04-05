@@ -16,7 +16,7 @@ CURR_RUN <- as.integer(argIn[3])
 CURR_IND <- as.integer(argIn[4])
 OUT_DIR <- argIn[5]
 
-# convert output from reducing step (means formatted as plaintext parsed R objects) into actual R object
+# convert output from reducing step (centroid totals formatted as plaintext parsed R objects) into actual R object
 f <- file("stdin")
 open(f)
 
@@ -24,7 +24,9 @@ myMeans <- list()
 
 while (length(line <- readLines(f,n=1)) > 0) {
   this_kvpair <- unlist(strsplit(line,split="\t"))
-  myMeans[[as.integer(this_kvpair[1])]] <- eval(parse(text=this_kvpair[2]))
+  centroidTotals <- eval(parse(text=this_kvpair[2]))
+  centroidCount <- as.numeric(this_kvpair[3])
+  myMeans[[as.integer(this_kvpair[1])]] <- centroidTotals / centroidCount
 }
 
 if (length(myMeans) == 0) {
