@@ -11,9 +11,10 @@
 ##SBATCH --partition=general-compute
 ##SBATCH --time=70:50:00
 
-BASEFILE=1987
+BASEFILE=small2clust
 
-python py/proc1.py csv/"$BASEFILE".csv 1 5 7 9 11 12 14 15 16 17 18 20 21 23 25 26 27 28 29
+#python py/proc1.py csv/"$BASEFILE".csv 1 5 7 9 11 12 14 15 16 17 18 20 21 23 25 26 27 28 29
+python py/proc1.py csv/"$BASEFILE".csv 
 
 python py/proc2.py csv/"$BASEFILE"_rmvna.csv
 

@@ -2,11 +2,13 @@
 
 # Calculate cluster-level means
 # write out file:
-# 1 \t "robj" \t 352
-# 2 \t "robj" \t 42
+# 1.1 \t "robj" \t 352
+# 1.2 \t "robj" \t 228
+# 2.1 \t "robj" \t 42
+# 2.2 \t "robj" \t 33
 # ...
 #
-# where first col is cluster id, and robj is deparsed centroid object (totals, not means), and third column is the count for that cluster.
+# where first col is (cluster id).(chunk id number), and robj is deparsed centroid object (totals, not means), and third column is the count for that cluster.
 
 f <- file("stdin")
 open(f)

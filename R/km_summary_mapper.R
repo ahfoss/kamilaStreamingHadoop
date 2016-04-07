@@ -1,7 +1,12 @@
 #!/util/academic/R/R-3.0.0/bin/Rscript
 
-# Input: current means, full csv data set
+# Command-line input argument: NUM_CHUNK, the number of splits associated with each centroid
+# Read from file: current means
+# Read from stdin: full csv data set in Hadoop streaming framework
 # Output: cluster membership, squared Euclidean distance to respective centroid; tab delimited
+
+argIn <- commandArgs(TRUE)
+NUM_CHUNK <- as.numeric(argIn[1])
 
 load('currentMeans.RData')
 if (!exists('myMeans')) stop("Mean RData file not found")
@@ -9,6 +14,7 @@ nMeans <- length(myMeans)
 
 f <- file("stdin")
 open(f)
+thisChunkNum <- 1
 while(length(line <- readLines(f,n=1)) > 0) {
   vec <- as.numeric(unlist(strsplit(line,',')))
 
@@ -28,7 +34,7 @@ while(length(line <- readLines(f,n=1)) > 0) {
 
   # output <clustNum \t dist>
   cat(
-    closestClust
+    paste(closestClust,thisChunkNum,sep='.')
    ,'\t'
    ,squaredEucDist
    ,'\t'
@@ -36,4 +42,7 @@ while(length(line <- readLines(f,n=1)) > 0) {
    ,'\n'
    ,sep=''
   )
+
+  # Flip chunk number
+  thisChunkNum <- thisChunkNum %% NUM_CHUNK + 1
 }

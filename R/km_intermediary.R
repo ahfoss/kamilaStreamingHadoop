@@ -20,18 +20,64 @@ OUT_DIR <- argIn[5]
 f <- file("stdin")
 open(f)
 
-myMeans <- list()
+myTotals <- list()
+myCounts <- c()
 
-while (length(line <- readLines(f,n=1)) > 0) {
-  this_kvpair <- unlist(strsplit(line,split="\t"))
-  centroidTotals <- eval(parse(text=this_kvpair[2]))
-  centroidCount <- as.numeric(this_kvpair[3])
-  myMeans[[as.integer(this_kvpair[1])]] <- centroidTotals / centroidCount
+# Functions to update totals and counts, while preserving NULL/NA values
+# for empty clusters.
+updateTotalList <- function(totalList, newVal, keyInt) {
+  # if key greater than length, insert new value and done
+  if (keyInt > length(totalList)) {
+    totalList[[keyInt]] <- newVal
+    return(totalList)
+  }
+  # if existing position is NULL, insert new value and done
+  if (is.null(totalList[[keyInt]])) {
+    totalList[[keyInt]] <- newVal
+    return(totalList)
+  }
+  # otherwise, add existing to new value and done
+  totalList[[keyInt]] <- totalList[[keyInt]] + newVal
+  return(totalList)
+}
+updateCountVec <- function(countVec, newVal, keyInt) {
+  # if key greater than length, insert new value and done
+  if (keyInt > length(countVec)) {
+    countVec[keyInt] <- newVal
+    return(countVec)
+  }
+  # if existing position is NA, insert new value and done
+  if (is.na(countVec[keyInt])) {
+    countVec[keyInt] <- newVal
+    return(countVec)
+  }
+  # otherwise, add existing to new value and done
+  countVec[keyInt] <- countVec[keyInt] + newVal
+  return(countVec)
 }
 
-if (length(myMeans) == 0) {
+while (length(line <- readLines(f,n=1)) > 0) {
+  this_kvtuple <- unlist(strsplit(line,split="\t"))
+  keysplit <- unlist(strsplit(this_kvtuple[1], split="\\."))
+  key1 <- as.integer(keysplit[1])
+  centroidTotals <- eval(parse(text=this_kvtuple[2]))
+  centroidCount <- as.numeric(this_kvtuple[3])
+  # tally totals, counts
+  myTotals <- updateTotalList(myTotals, centroidTotals, key1)
+  myCounts <- updateCountVec (myCounts, centroidCount,  key1)
+}
+
+if (length(myTotals) == 0) {
   cat('NA')
   stop(paste('Stopped in iteration ',CURR_IND,'; no means detected.', sep=''))
+}
+
+# now loop through totals,counts to calculate myMeans
+# in the event of empty clusters, NULLs propagate correctly.
+myMeans <- list()
+for (i in 1:length(myTotals)) {
+  if (is.null(myTotals[[i]])) next
+  myMeans[[i]] <- myTotals[[i]] / myCounts[i]
 }
 
 # check convergence using input

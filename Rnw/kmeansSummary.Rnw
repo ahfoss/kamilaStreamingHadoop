@@ -77,7 +77,7 @@ Please specify the data set used and job number in the original .Rnw document:
 <<uservals>>=
 # The full data set file name
 dataName = '../csv/small2clust_rmvna_norm.csv'
-JOBID = '5260502'
+JOBID = '5278630'
 
 # A subsampled version of the data set suitable for plotting, ~1000 observations
 subsampleData = '../csv/small2clust_rmvna_norm.csv'
@@ -111,7 +111,7 @@ print(
   xtable(
     varInfo,
     digits = c(0,0,0,-2,-2,-2,-2),
-    caption=c("Basic Dataset Info","Note: Mean and standard deviation reported before standardizing to mean 0 and sd 1")
+    caption=c("Note: Mean and standard deviation reported before standardizing to mean 0 and sd 1","Basic Dataset Info")
   ),
   include.rownames=FALSE
 )
@@ -184,7 +184,7 @@ for (i in 1:length(runDirs)) {
   # Get pathway to cluster-specific info
   clusterSsFiles <- list.files(
     path = file.path('..',outputFileName,runDirs[i],'stats'),
-    pattern = 'stats.tsv',
+    pattern = 'clusterStats.tsv',
     full.names = TRUE
   )
   # Log info in data frame
@@ -217,7 +217,7 @@ print(
 best_run <- which.min(runInfo$wss)
 
 allStats  <- read.table(
-  file.path('..',outputFileName,paste('run_',best_run,sep=''),'stats','stats.tsv'),
+  file.path('..',outputFileName,paste('run_',best_run,sep=''),'stats','clusterStats.tsv'),
   header = TRUE,
   stringsAsFactors = FALSE
 )
@@ -445,11 +445,11 @@ lines(1:length(objValues[[best_run]]),log(objValues[[best_run]],base=10),col='bl
 % variable specific cluster info: mean, sd, min, max
 % table with cluster by row, stat by column, one table per variable
 <<varStats,echo=FALSE>>=
-minList <- strsplit(allStats[,4],split=',')
+minList <- strsplit(allStats[,'minvec'],split=',')
 minMat  <- matrix(as.numeric(unlist(minList)),byrow=TRUE,nrow=length(minList),ncol=length(minList[[1]]))
-meanList <- strsplit(allStats[,5],split=',')
+meanList <- strsplit(allStats[,'meanvec'],split=',')
 meanMat  <- matrix(as.numeric(unlist(meanList)),byrow=TRUE,nrow=length(meanList),ncol=length(meanList[[1]]))
-maxList <- strsplit(allStats[,6],split=',')
+maxList <- strsplit(allStats[,'maxvec'],split=',')
 maxMat  <- matrix(as.numeric(unlist(maxList)),byrow=TRUE,nrow=length(maxList),ncol=length(maxList[[1]]))
 @
 
