@@ -14,43 +14,47 @@
 ################################
 
 # Debugging SLURM options
-#SBATCH --partition=debug
-#SBATCH --time=00:30:00
-#SBATCH --nodes=2
+##SBATCH --partition=debug
+##SBATCH --time=00:55:00
+##SBATCH --nodes=2
 
 # Full SLURM options
-##SBATCH --partition=general-compute
-##SBATCH --time=50:50:00
-##SBATCH --nodes=2
-##Specifies that the job will be requeued after a node failure.
-##The default is that the job will not be requeued.
-##SBATCH --requeue
+#SBATCH --partition=general-compute
+#SBATCH --time=10:50:00
+#SBATCH --nodes=6
+#Specifies that the job will be requeued after a node failure.
+#The default is that the job will not be requeued.
+#SBATCH --requeue
 
 # General SLURM options for full or debugging mode
 ## --exclusive allocates the entire node for this job
 #SBATCH --exclusive
-#SBATCH --job-name="test"
+#SBATCH --job-name="m7r10n6"
 #SBATCH --output=kmeansResults-%J.out
 #SBATCH --mail-user=ahfoss@buffalo.edu
 #SBATCH --mail-type=ALL
 
 # File to be clustered:
 # Data file is ./$DATADIR/$DATANAME
-DATANAME=small2clust_rmvna_norm.csv
+DATANAME=1987_rmvna_norm.csv
 # directory in which data file is stored
 DATADIR=csv
 
 # number of variables in the data set
-DATA_DIM=5
-
+DATA_DIM=10
 # number of clusters to search for
-NUM_CLUST=2
-# NUM_TASKS should be less than or equal to the # clusters
-NUM_TASKS=6
+NUM_CLUST=6
+# Number of mappers
+NUM_MAP=7
+# Number of reducers
+NUM_REDUCE=10
+# The number of keys per cluster
+NUM_CHUNK=6
+
 # Number of initializations of the kmeans algorithm
-NUM_INIT=5
+NUM_INIT=1
 # Max number of iterations per initialization
-MAX_NITER=2
+MAX_NITER=1
 # Tolerance for determining convergence; see README.txt
 # Converted to float
 EPSILON=0.01
@@ -89,30 +93,7 @@ echo "MH_SCRATCH_DIR="$MH_SCRATCH_DIR
 export HADOOP_CONF_DIR=$SLURM_SUBMIT_DIR/config-$SLURM_JOBID
 echo "MyHadoop config directory="$HADOOP_CONF_DIR
 
-
-####################################################
-#### Calculate the number of keys (chunks) #########
-####### associated with each cluster centroid ######
-####################################################
-# Given: NUM_CLUST, NUM_TASKS
-# Unknown: NUM_CHUNK, the number of keys per centroid.
-# Goal: NUM_CLUST * NUM_CHUNK ~= 1.5 * NUM_TASKS
-# Using this approximate equality, we solve for NUM_CHUNK and 
-# divide the records associated with each centroid into NUM_CHUNK
-# separate keys.
-
-# If NUM_CLUST is already greater than 1.5 * NUM_TASKS, then NUM_CHUNK is set
-# to 1.
-if [ $NUM_CLUST -gt `expr $NUM_TASKS \* 3 / 2` ]
-  then
-  NUM_CHUNK=1
-else
-  # Otherwise, NUM_CHUNK is an integer such that
-  #   NUM_CLUST * NUM_CHUNK >= 1.5 * NUM_TASKS
-  NUM_CHUNK=`expr $NUM_TASKS \* 3 / 2 / $NUM_CLUST + 1`
-fi
-echo
-echo NUM_TASKS: $NUM_TASKS
+echo NUM_REDUCE: $NUM_REDUCE
 echo NUM_CLUST: $NUM_CLUST
 echo NUM_CHUNK: $NUM_CHUNK
 APPRX_KEYS=`expr $NUM_CLUST \* $NUM_CHUNK`
@@ -232,7 +213,8 @@ do
         # Primary M-R step
         $HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR \
           jar /util/academic/hadoop/2.5.1/hadoop-2.5.1/share/hadoop/tools/lib/hadoop-streaming-2.5.1.jar \
-          -D mapreduce.job.reduces="$NUM_TASKS" \
+          -D mapred.map.tasks=$NUM_MAP \
+          -D mapred.reduce.tasks=$NUM_REDUCE \
           -D mapred.text.key.comparator.options="-n" \
           -mapper "$RBIN_HOME/Rscript $PWD/R/km_mapper.R $NUM_CHUNK" \
           -reducer "$RBIN_HOME/Rscript $PWD/R/km_reducer.R" \
@@ -316,7 +298,8 @@ do
     ##################################################
     $HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR \
       jar /util/academic/hadoop/2.5.1/hadoop-2.5.1/share/hadoop/tools/lib/hadoop-streaming-2.5.1.jar \
-      -D mapreduce.job.reduces=$NUM_TASKS \
+      -D mapred.map.tasks=$NUM_MAP \
+      -D mapred.reduce.tasks=$NUM_REDUCE \
       -D mapred.text.key.comparator.options="-n" \
       -mapper "$RBIN_HOME/Rscript $PWD/R/km_summary_mapper.R $NUM_CHUNK" \
       -reducer "$RBIN_HOME/Rscript $PWD/R/km_summary_reducer.R" \

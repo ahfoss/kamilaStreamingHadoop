@@ -29,15 +29,3 @@ summary map-reduce run to obtain:
   - summary statistics (objective function value, within to between SS, etc)
 Outer loop of repeated k-means runs with random initialized centroids
 
-(1) num clust * X = 1.5 * num reducers
-
-    EXAMPLE:
-    10 clust, 20 reducers: X = 1.5*20/10 = 3 i.e. split into 30 chunks
-    nlines = 100000: max chunk size = 3334 + a little
-
-    calculate chunk size within cluster up-front
-    feed chunk size into mapper
-    a counter within the mapper creates the chunks of the given size
-     + sorting quicker?
-     - rounding errors for chunk size could lead to a very small chunk; should make sure chunk size is a bit too small
-
