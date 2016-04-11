@@ -77,7 +77,7 @@ Please specify the data set used and job number in the original .Rnw document:
 <<uservals>>=
 # The full data set file name
 dataName = '../csv/small2clust_rmvna_norm.csv'
-JOBID = '5278630'
+JOBID = '5305288'
 
 # A subsampled version of the data set suitable for plotting, ~1000 observations
 subsampleData = '../csv/small2clust_rmvna_norm.csv'
@@ -310,7 +310,7 @@ for (i in 1:thisNumIter) {
   transCentroids <- allCentroids[[i]] %*% transMat
   points(transCentroids, pch=19, col=myColors, cex=2.5)
   points(transCentroids, pch=1, col='black', cex=2.5, lwd=2)
-  text(transCentroids, labels=i,cex=0.8)
+  text(transCentroids, labels=i-1,cex=0.8)
 }
 
 legend(
