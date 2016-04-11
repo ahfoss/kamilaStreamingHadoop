@@ -14,42 +14,42 @@
 ################################
 
 # Debugging SLURM options
-##SBATCH --partition=debug
-##SBATCH --time=00:55:00
-##SBATCH --nodes=2
+#SBATCH --partition=debug
+#SBATCH --time=00:55:00
+#SBATCH --nodes=1
 
 # Full SLURM options
-#SBATCH --partition=general-compute
-#SBATCH --time=10:50:00
-#SBATCH --nodes=6
-#Specifies that the job will be requeued after a node failure.
-#The default is that the job will not be requeued.
-#SBATCH --requeue
+##SBATCH --partition=general-compute
+##SBATCH --time=10:50:00
+##SBATCH --nodes=6
+##Specifies that the job will be requeued after a node failure.
+##The default is that the job will not be requeued.
+##SBATCH --requeue
 
 # General SLURM options for full or debugging mode
 ## --exclusive allocates the entire node for this job
 #SBATCH --exclusive
-#SBATCH --job-name="m7r10n6"
+#SBATCH --job-name="m3r3c2"
 #SBATCH --output=kmeansResults-%J.out
 #SBATCH --mail-user=ahfoss@buffalo.edu
 #SBATCH --mail-type=ALL
 
 # File to be clustered:
 # Data file is ./$DATADIR/$DATANAME
-DATANAME=1987_rmvna_norm.csv
+DATANAME=small2clust_rmvna_norm.csv
 # directory in which data file is stored
 DATADIR=csv
 
 # number of variables in the data set
-DATA_DIM=10
+DATA_DIM=5
 # number of clusters to search for
-NUM_CLUST=6
+NUM_CLUST=2
 # Number of mappers
-NUM_MAP=7
+NUM_MAP=3
 # Number of reducers
-NUM_REDUCE=10
+NUM_REDUCE=3
 # The number of keys per cluster
-NUM_CHUNK=6
+NUM_CHUNK=2
 
 # Number of initializations of the kmeans algorithm
 NUM_INIT=1
@@ -65,11 +65,33 @@ echo "RBIN_HOME="$RBIN_HOME
 # End of user-specified values
 ################################
 
+# Log job stats in a central file
+mkdir -p logs
+MASTER_LOG=logs/jobLog.tsv
+if [ ! -f "$MASTER_LOG" ]
+  then echo "Creating master log file: ""$MASTER_LOG"
+  echo -e "JobId\t"\
+"DataName\t"\
+"NominalNumMap\t"\
+"NominalNumRed\t"\
+"NumNode\t"\
+"NumClust\t"\
+"NumChunk\t"\
+"MapTime\t"\
+"RedTime\t"\
+"ActualNumMap\t"\
+"ActualNumRed\t"\
+"FailStatus" > $MASTER_LOG
+fi
 
 echo "SLURM_JOBID="$SLURM_JOBID
 echo "SLURM_JOB_NODELIST"=$SLURM_JOB_NODELIST
 echo "SLURM_NNODES"=$SLURM_NNODES
 echo "SLURMTMPDIR="$SLURMTMPDIR
+
+# Bad magic string is bad. Is there an environment var for this?
+SLURM_OUTFILE="kmeansResults-"$SLURM_JOBID".out"
+echo "Logfile of this k-means implementation = "$SLURM_OUTFILE
 
 echo "working directory = "$SLURM_SUBMIT_DIR
 
@@ -253,7 +275,7 @@ do
 	#ls -lh $TMP_DIR
         objectiveArray[$i]=`cat ./myoutput-$SLURM_JOBID/run_$runNumber/iter_$i/part-* | sort -t . -k1,1n -k2,2n | Rscript R/km_intermediary.R $EPSILON $SLURM_JOBID $runNumber $i $TMP_DIR`
 	#ls -lh $TMP_DIR
-  
+
         # break kmeans run early if objective is empty
         if [ ${objectiveArray[$i]} = 'NA' ]
         then
@@ -333,17 +355,33 @@ do
     # remove tmp dir containing intial and current means
     rm -r $TMP_DIR
 
-##################################################
-##################################################
-##################################################
 ## outer number init kmeans loop ends here
 done
+
 # write out wss values for all runs
 mkdir ./myoutput-$SLURM_JOBID/best_run
 echo ${wssArray[*]} > ./myoutput-$SLURM_JOBID/best_run/allWss.txt
-##################################################
-##################################################
-##################################################
+
+# gather and write out stats on first MR run to file
+FAIL_STATUS=`sed '/list output/q' $SLURM_OUTFILE | grep "Streaming Command Failed" | awk '{print $3}'`
+ACTUAL_NUM_MAP=`sed '/list output/q' $SLURM_OUTFILE | grep "Launched map tasks" | awk -F'=' '{print $2}'`
+ACTUAL_NUM_RED=`sed '/list output/q' $SLURM_OUTFILE | grep "Launched reduce tasks" | awk -F'=' '{print $2}'`
+MAP_TIME=`sed '/list output/q' $SLURM_OUTFILE | grep "Total vcore-seconds taken by all map tasks" | awk -F'=' '{print $2}'`
+RED_TIME=`sed '/list output/q' $SLURM_OUTFILE | grep "Total vcore-seconds taken by all reduce tasks" | awk -F'=' '{print $2}'`
+
+echo -e "$SLURM_JOBID\t"\
+"$DATANAME\t"\
+"$NUM_MAP\t"\
+"$NUM_REDUCE\t"\
+"$SLURM_NNODES\t"\
+"$NUM_CLUST\t"\
+"$NUM_CHUNK\t"\
+"$MAP_TIME\t"\
+"$RED_TIME\t"\
+"$ACTUAL_NUM_MAP\t"\
+"$ACTUAL_NUM_RED\t"\
+"$FAIL_STATUS" >> $MASTER_LOG
+
 echo
 echo
 echo

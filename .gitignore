@@ -1,5 +1,6 @@
 csv/
 summary/
+logs/
 config-*/
 myoutput-*/
 tmp_*/
