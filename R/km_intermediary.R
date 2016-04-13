@@ -6,8 +6,6 @@
 # [4] CURR_IND, the index of the current kmeans iteration (inner loop)
 # [5] OUT_DIR, directory of current means file
 
-source('./R/helperFunctions.R') # for genMean()
-
 # get input arguments
 argIn <- commandArgs(TRUE)
 EPSILON <- as.numeric(argIn[1])
@@ -15,6 +13,11 @@ JOBID <- argIn[2]
 CURR_RUN <- as.integer(argIn[3])
 CURR_IND <- as.integer(argIn[4])
 OUT_DIR <- argIn[5]
+
+# Load objects for generating pseudorandom vecs. Loading this automatically
+# resets the current RNG state as needed. The file seeding.RData contains
+# .Random.seed, the list currentQueue, and the function advanceQueue.
+load(file.path(OUT_DIR, 'seeding.RData'))
 
 # convert output from reducing step (centroid totals formatted as plaintext parsed R objects) into actual R object
 f <- file("stdin")
@@ -99,23 +102,31 @@ prevMeans <- myMeans
 dataDim <- length(prevMeans[[1]])
 for (i in 1:length(currentMeans)) {
   if (length(currentMeans[[i]]) == 0) {
-    #print(currentMeans)
-    currentMeans[[i]] <- genMean(dataDim) # runif(n=dataDim, min = -2, max = 2)
-    #print(currentMeans)
+    currentQueue <- advanceQueue(currentQueue)
+    currentMeans[[i]] <- currentQueue$selectedVec
     warning('Empty internal centroid detected in intermediary script; regenerating: number of empty elements is now ',sum(vapply(currentMeans,is.null,NA)),'.')
   }
 }
 # make sure to initialize new replacement means if the last clusters were empty
 lenPrevMeans <- length(prevMeans)
 while( length(currentMeans) < lenPrevMeans ) {
-  #print(currentMeans)
-  currentMeans[[length(currentMeans)+1]] <- genMean(dataDim) # runif(n=dataDim, min = -2, max = 2)
-  #print(currentMeans)
+  currentQueue <- advanceQueue(currentQueue)
+  currentMeans[[length(currentMeans)+1]] <- currentQueue$selectedVec
   warning('Empty final centroid detected in intermediary script; regenerating: length is now ',length(currentMeans),'.')
 }
 
 myMeans <- currentMeans
 save(myMeans,file=file.path(OUT_DIR,'currentMeans.RData'))
+
+# Save state of RNG and source of centroid vecs.
+# This is kind of clunky, but wrapping this save in a function treads on 
+# risky ground regarding environments and manipulating .Random.seed directly.
+save(
+  .Random.seed,
+  currentQueue,
+  advanceQueue,
+  file=file.path(OUT_DIR, 'seeding.RData')
+)
 
 # calculate and output the objective function
 l1_norm <- function(x1, x2) {
