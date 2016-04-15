@@ -1,15 +1,13 @@
 #!/util/academic/R/R-3.0.0/bin/Rscript
 
 # Input arguments:
-# [1] DATA_DIM, the dimensionality (i.e. number of variables) in the data set.
-# [2] NUM_CLUST, the number of clusters in the data
-# [3] OUT_DIR, the pathway for the output. In kmeans.slurm script it is tmp_%J
+# [1] NUM_CLUST, the number of clusters in the data
+# [2] OUT_DIR, the pathway for the output. In kmeans.slurm script it is tmp_%J
 
 # get input args
 argIn <- commandArgs(TRUE)
-DATA_DIM <- as.integer(argIn[1])
-NUM_CLUST <- as.integer(argIn[2])
-OUT_DIR <- argIn[3]
+NUM_CLUST <- as.integer(argIn[1])
+OUT_DIR <- argIn[2]
 
 # Load objects for generating pseudorandom vecs. Loading this automatically
 # resets the current RNG state as needed. The file seeding.RData contains
