@@ -84,8 +84,9 @@ while(length(line <- readLines(f,n=1)) > 0) {
   }
 
 }
+close(f)
 
-if (last_key == this_key) {
+if (exists('this_key') && last_key == this_key) {
   logClusterInfo(last_key,clust_count,running_total_wss,current_mins,running_sum,current_maxs)
 }
 
