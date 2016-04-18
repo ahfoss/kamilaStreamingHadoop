@@ -11,11 +11,12 @@ documentation = '''
    The data file should have an initial row of column headers and no row names.
 
  Output:
-   [1] *_rmvna.csv, where * denotes original filename. The original file with
-       the specified rows and columns removed.
-   [2] *_rmvna_rowlog.csv, where * denotes original filename. A file containing
-       the tabulated number of missing elements per row. Does NOT count missing
-       values in columns flagged for removal.
+  Note "*" denotes the original file name.
+   [1] *_rmvna.csv, the original file with the specified rows and columns
+       removed.
+   [2] *_rmvna_rowlog.csv, a file containing the tabulated number of missing
+       elements per row. Does NOT count missing values in columns flagged for
+       removal.
    [3] *_rmvna_collog.csv, where * denotes original filename. A file containing
        the number of missing elements for each column in the data set.
 
@@ -115,7 +116,7 @@ with open(outFileNameRowLog, 'w') as outRow:
 # Write out column missing values
 with open(outFileNameColLog, 'w') as outCol:
     outColWriter = csv.writer(outCol, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-    outColWriter.writerow(['Column index','Number of missing values in column'])
+    outColWriter.writerow(['Column index','Variable Name','Number of missing values in column'])
     for i, elm in enumerate(numMissingInCol):
         outColWriter.writerow([i+1, fullHeaderNames[i], elm])
 

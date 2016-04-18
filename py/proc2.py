@@ -62,7 +62,6 @@ print "Number of columns: " + str(numCol)
 sum1 = np.zeros(numCol, dtype=np.float64)
 mins = np.ones(numCol) * np.inf
 maxs = np.ones(numCol) * (-np.inf)
-#np.fmin(np.ones(3) * np.inf,np.ones(3))
 count = 0
 
 print

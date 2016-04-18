@@ -6,22 +6,25 @@
 #SBATCH --nodes=1
 #SBATCH --mail-user=ahfoss@buffalo.edu
 #SBATCH --mail-type=ALL
-##SBATCH --partition=debug
-##SBATCH --time=00:50:00
-#SBATCH --partition=general-compute
-#SBATCH --time=70:50:00
+#SBATCH --partition=debug
+#SBATCH --time=00:50:00
+##SBATCH --partition=general-compute
+##SBATCH --time=70:50:00
 
-BASEFILE=cat1987-2008
+BASEFILE=cat1987-2008_v1
 
-#python py/proc1.py csv/"$BASEFILE".csv 1 5 7 9 11 12 14 15 16 17 18 20 21 23 25 26 27 28 29
-python py/proc1.py csv/"$BASEFILE".csv 3 9 10 11 17 18 20 21 23 25 26 27 28 29
 
-python py/proc2.py csv/"$BASEFILE"_rmvna.csv
+# 1987 command
+python py/preprocMixed.py csv/1987.csv csv/1987_types.csv 1 5 7 11 12 14 15 16
+
+# 21 year commands
+#python py/proc1.py csv/"$BASEFILE".csv 2 3 4 9 10 11 17 18 20 21 22 23 24 25 26 27 28 29
+#python py/proc2.py csv/"$BASEFILE"_rmvna.csv
 
 NLINES=`head -2 csv/"$BASEFILE"_rmvna_rowlog.csv | tail -1 | awk -F',' '{print $2}'`
 echo "NLINES is $NLINES"
 
-python py/subsampleData.py csv/"$BASEFILE"_rmvna_norm.csv $NLINES 3000
+python py/subsampleData.py csv/"$BASEFILE"_rmvna_norm.csv $NLINES 2000
 
 echo "All done!"
 
