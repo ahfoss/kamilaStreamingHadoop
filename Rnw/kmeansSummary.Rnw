@@ -76,11 +76,11 @@ sessionInfo()
 Please specify the data set used and job number in the original .Rnw document:
 <<uservals>>=
 # The full data set file name
-dataName = '../csv/small2clust_rmvna_norm.csv'
-JOBID = '5313137'
+dataName = '../csv/2001_rmvna_norm.csv'
+JOBID = '5343534'
 
 # A subsampled version of the data set suitable for plotting, ~1000 observations
-subsampleData = '../csv/small2clust_rmvna_norm.csv'
+subsampleData = '../csv/subsampled_2000_2001_rmvna_norm.csv'
 @
 
 \newpage
@@ -100,23 +100,48 @@ The data file is \Sexpr{fileSize/1024^3} GiB and \Sexpr{fileSize/1000^3} GB (\Se
 
 %%%%%%% Add info on missing vars from preprocessing step
 <<basicDataInfo,echo=FALSE>>=
-dataNameNoExt <- file_path_sans_ext(dataName)
+#dataNameNoExt <- file_path_sans_ext(dataName)
 dataExt <- file_ext(dataName)
-varInfo <- read.csv(paste(dataNameNoExt,'_stats.',dataExt,sep=''))
+#varInfo <- read.csv(paste(dataNameNoExt,'_stats.',dataExt,sep=''))
+conVarInfo <- read.csv(paste(spl[1],'constats.',dataExt,sep=''))
+numConVar <- nrow(conVarInfo)
 outputFileName <- paste('myoutput-',JOBID,sep='')
+
+catVarInfo <- read.table(paste(spl[1],'catstats.',dataExt,sep=''),header=TRUE,sep='\t')
+levCounts <- as.numeric(unlist(strsplit(as.vector(catVarInfo$LevCounts),split=',')))
+levPcts <- levCounts / nLines * 100
+
+catInfoTable <- data.frame(
+  VariableName = with(catVarInfo,rep(VarName,times=NumLev)),
+  LevelName = unlist(strsplit(as.vector(catVarInfo$LevNames),split=',')),
+  Counts = levCounts,
+  Percent = levPcts
+)
 @
 
-<<printBasicDataInfo,echo=FALSE,results='asis'>>=
+<<printBasicConDataInfo,echo=FALSE,results='asis'>>=
 print(
   xtable(
-    varInfo,
-    digits = c(0,0,0,-2,-2,-2,-2),
-    caption=c("Note: Mean and standard deviation reported before standardizing to mean 0 and sd 1","Basic Dataset Info")
+    conVarInfo,
+    digits = c(0,0,0,0,-2,-2,-2,-2),
+    caption=c("Summary statistics for continuous variables. Note: statistics calculated before standardizing to mean 0 and sd 1","Basic Continuous Variable Info")
   ),
   include.rownames=FALSE
 )
 @
 
+<<printBasicCatDataInfo,echo=FALSE,results='asis'>>=
+print(
+  xtable(
+    catInfoTable,
+    digits = c(0,0,0,0,1),
+    caption=c("Summary statistics for categorical variables.","Basic Categorical Variable Info")
+  ),
+  include.rownames=FALSE
+)
+@
+
+\newpage
 \subsection{Basic K-means Info}
 % basic run info: # runs, # iter, # clust
 <<runInfo,echo=FALSE>>=
@@ -253,12 +278,15 @@ datMeans <- colMeans(subsamp)
 datSds <- apply(subsamp,2,sd)
 datSds[datSds==0] <- 1 # for cols with no variance
 subsamp <- scale(subsamp, center=datMeans, scale=datSds)
+subsampCon <- subsamp[,1:numConVar]
 
-# SVD of data
-svdDat <- svd(subsamp)
+# SVD of continuous data for plotting
+svdDat <- svd(subsampCon)
 # X = UDV'
 # X (DV')^-1 = U
 transMat <- ginv(diag(svdDat$d) %*% t(svdDat$v))
+# Expand to zero out categoricals (for now)
+transMat <- rbind(transMat,matrix(0,nrow=ncol(subsamp) - numConVar,ncol=ncol(transMat)))
 
 # get centroid file names in appropriate format
 centroidFileNames <- list.files(
@@ -333,10 +361,10 @@ totalVar <- svdDat$d^2 / sum(svdDat$d^2)
 #totalVar
 firstTwo <- sum(totalVar[1:2])
 #firstTwo
-#varInfo
+#conVarInfo
 loads <- data.frame(
-  Variable.Index = varInfo$Variable.Index,
-  Variable.Name = varInfo$Variable.Name,
+  Variable.Index = conVarInfo$VarIndex,
+  Variable.Name = conVarInfo$VarName,
   PC1 = svdDat$v[,1],
   PC2 = svdDat$v[,2]
 )
@@ -452,23 +480,46 @@ meanList <- strsplit(allStats[,'meanvec'],split=',')
 meanMat  <- matrix(as.numeric(unlist(meanList)),byrow=TRUE,nrow=length(meanList),ncol=length(meanList[[1]]))
 maxList <- strsplit(allStats[,'maxvec'],split=',')
 maxMat  <- matrix(as.numeric(unlist(maxList)),byrow=TRUE,nrow=length(maxList),ncol=length(maxList[[1]]))
+
+allVarNames <- colnames(subsamp)
+allVarNames <- gsub('_','.',allVarNames)
 @
 
 <<showVarStats,echo=FALSE,results='asis'>>=
+tabCounter <- 0
+numTables <- 3
 for (varNum in 1:ncol(minMat)) {
-print(
-  xtable(
-    data.frame(
-      clusterNumber = 1:nrow(minMat),
-      min = minMat[,varNum],
-      mean = meanMat[,varNum],
-      max = maxMat[,varNum]
-    ),
-    digits = c(0,0,3,3,3),
-    caption = paste('Cluster-specific stats for variable ',varNum,', ',varInfo$Variable.Name[varNum],'.',sep='')
-  ),
-  include.rownames = FALSE
-)
+  if (varNum <= numConVar) {
+    print(
+      xtable(
+        data.frame(
+          clusterNumber = 1:nrow(minMat),
+          min = minMat[,varNum],
+          mean = meanMat[,varNum],
+          max = maxMat[,varNum]
+        ),
+        digits = c(0,0,3,3,3),
+        caption = paste('Cluster-specific stats for variable ',varNum,', ',allVarNames[varNum],'.',sep='')
+      ),
+      include.rownames = FALSE
+    )
+  } else {
+    ithProportion <- meanMat[,varNum] / maxMat[,varNum]
+    print(
+      xtable(
+        data.frame(
+	  ClusterNumber = 1:nrow(minMat),
+	  Count = ithProportion * nLines,
+	  Percent = ithProportion * 100
+	),
+	digits = c(0,0,0,1),
+        caption = paste('Cluster-specific stats for variable ',varNum,', ',allVarNames[varNum],'.',sep='')
+      ),
+      include.rownames = FALSE
+    )
+  }
+  tabCounter = tabCounter + 1
+  if (tabCounter %% numTables == 0) cat('\n\\clearpage\n')
 }
 @
 
