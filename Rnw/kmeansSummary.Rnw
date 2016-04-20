@@ -76,11 +76,11 @@ sessionInfo()
 Please specify the data set used and job number in the original .Rnw document:
 <<uservals>>=
 # The full data set file name
-dataName = '../csv/2001_rmvna_norm.csv'
-JOBID = '5343534'
+dataName = '../csv/cat1987-2008_v1_rmvna_norm.csv'
+JOBID = '5344386'
 
 # A subsampled version of the data set suitable for plotting, ~1000 observations
-subsampleData = '../csv/subsampled_2000_2001_rmvna_norm.csv'
+subsampleData = '../csv/subsampled_2000_cat1987-2008_v1_rmvna_norm.csv'
 @
 
 \newpage
@@ -142,6 +142,7 @@ print(
 @
 
 \newpage
+\clearpage
 \subsection{Basic K-means Info}
 % basic run info: # runs, # iter, # clust
 <<runInfo,echo=FALSE>>=
@@ -504,15 +505,23 @@ for (varNum in 1:ncol(minMat)) {
       include.rownames = FALSE
     )
   } else {
-    ithProportion <- meanMat[,varNum] / maxMat[,varNum]
+    clustTotalCounts <- clustInfoTab[,'Cluster Size']
+    ithClustCount <- ifelse(
+      test = maxMat[,varNum] == 0,
+      yes = 0,
+      no = meanMat[,varNum] / maxMat[,varNum] * clustTotalCounts
+    )
     print(
       xtable(
         data.frame(
 	  ClusterNumber = 1:nrow(minMat),
-	  Count = ithProportion * nLines,
-	  Percent = ithProportion * 100
+          min = minMat[,varNum],
+          mean = meanMat[,varNum],
+          max = maxMat[,varNum],
+	  CountYes = ithClustCount,
+	  Percent = ithClustCount / clustTotalCounts * 100
 	),
-	digits = c(0,0,0,1),
+	digits = c(0,0,2,2,2,0,1),
         caption = paste('Cluster-specific stats for variable ',varNum,', ',allVarNames[varNum],'.',sep='')
       ),
       include.rownames = FALSE
