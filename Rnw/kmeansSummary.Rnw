@@ -495,9 +495,9 @@ for (varNum in 1:ncol(minMat)) {
       xtable(
         data.frame(
           clusterNumber = 1:nrow(minMat),
-          min = minMat[,varNum],
-          mean = meanMat[,varNum],
-          max = maxMat[,varNum]
+          min = minMat[,varNum] * conVarInfo[varNum,'StandardDeviation'] + conVarInfo[varNum,'Mean'],
+          mean = meanMat[,varNum] * conVarInfo[varNum,'StandardDeviation'] + conVarInfo[varNum,'Mean'],
+          max = maxMat[,varNum] * conVarInfo[varNum,'StandardDeviation'] + conVarInfo[varNum,'Mean']
         ),
         digits = c(0,0,3,3,3),
         caption = paste('Cluster-specific stats for variable ',varNum,', ',allVarNames[varNum],'.',sep='')
