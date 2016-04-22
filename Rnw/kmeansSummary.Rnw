@@ -247,17 +247,18 @@ allStats  <- read.table(
   header = TRUE,
   stringsAsFactors = FALSE
 )
+allStats$relativeSize <- paste( round(allStats[,'ClusterSize'] / sum(allStats[,'ClusterSize']) * 100,1) , '%', sep='')
 allStats$wssPerN <- allStats[,'SSQ'] / allStats[,'ClusterSize']
 
-clustInfoTab <- allStats[,c('ClusterNumber','ClusterSize','SSQ','wssPerN')]
-colnames(clustInfoTab) <- c('Cluster Number','Cluster Size','Within-Cluster SS','WSS per point')
+clustInfoTab <- allStats[,c('ClusterNumber','ClusterSize','relativeSize','SSQ','wssPerN')]
+colnames(clustInfoTab) <- c('Cluster Number','Cluster Size','Relative Size','Within-Cluster SS','WSS per point')
 @
 
 <<printClustInf, echo=FALSE, results='asis'>>=
 print(
   xtable(
     clustInfoTab,
-    digits=c(0,0,0,2,2),
+    digits=c(0,0,-2,0,-2,2),
     caption=paste('Cluster-specific information for the best k-means run, run ', best_run, '.', sep='')
   ),
   include.rownames=FALSE
