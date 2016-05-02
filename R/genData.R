@@ -36,7 +36,7 @@ dat <- data.frame(
   D2 = c(
     sample(c('common','very common'),size=2*nn - 7,replace=TRUE),
     rep('rare',4),
-    rep('super rate', 3)
+    rep('super rare', 3)
   ),
   D3 = sample(paste('lev',1:15,sep=''),size=2*nn,replace=TRUE)
 )
