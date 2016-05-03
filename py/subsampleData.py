@@ -1,4 +1,4 @@
-#!usr/bin/env python
+#!/usr/bin/python
 #
 documentation = '''
  For an input [1] csv data filename [2] number of lines in input data set

@@ -8,5 +8,6 @@ test-*.out
 kmeansResults-*.out
 Rnw/
 !Rnw/kmeansSummary.Rnw
+db/
 preprocessingResults*.err
 preprocessingResults*.out
