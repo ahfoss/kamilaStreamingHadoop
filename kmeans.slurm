@@ -49,16 +49,16 @@ INITIAL_SEED=1234
 # number of clusters to search for
 NUM_CLUST=8
 # Number of mappers
-NUM_MAP=12
+NUM_MAP=14
 # Number of reducers
-NUM_REDUCE=12
+NUM_REDUCE=14
 # The number of keys per cluster
-NUM_CHUNK=3
+NUM_CHUNK=2
 
 # Number of initializations of the kmeans algorithm
 NUM_INIT=2
 # Max number of iterations per initialization
-MAX_NITER=4
+MAX_NITER=3
 # Tolerance for determining convergence; see README.txt
 # Converted to float
 EPSILON=0.01
@@ -226,7 +226,7 @@ declare -a wssArray
 
 # Initialize seed and associated objects for pseudorandom RNG
 mkdir $TMP_DIR
-Rscript R/km_initialize_kmeans.R \
+Rscript R/kmeans/kmeans_initialize_all.R \
     $INITIAL_SEED \
     $TMP_DIR \
     ./"$DATADIR"/"$SUBSAMP_DATANAME"
@@ -239,7 +239,7 @@ do
     mkdir -p ./$HADOOP_RES_DIR/run_$runNumber/
 
     # initialize the means based on the dimensionality of the data
-    Rscript R/km_initialize_run.R $NUM_CLUST $TMP_DIR
+    Rscript R/kmeans/kmeans_initialize_run.R $NUM_CLUST $TMP_DIR
     mkdir -p ./$HADOOP_RES_DIR/run_$runNumber/iter_0/
     cp $TMP_DIR/initialMeans.RData \
         ./$HADOOP_RES_DIR/run_$runNumber/iter_0/currentMeans_i1.RData
@@ -258,8 +258,8 @@ do
           -D mapred.map.tasks=$NUM_MAP \
           -D mapred.reduce.tasks=$NUM_REDUCE \
           -D mapred.text.key.comparator.options="-n" \
-          -mapper "$RBIN_HOME/Rscript $PWD/R/km_mapper.R $NUM_CHUNK" \
-          -reducer "$RBIN_HOME/Rscript $PWD/R/km_reducer.R" \
+          -mapper "$RBIN_HOME/Rscript $PWD/R/kmeans/kmeans_mapper.R $NUM_CHUNK" \
+          -reducer "$RBIN_HOME/Rscript $PWD/R/kmeans/kmeans_reducer.R" \
           -input /data/"$DATANAME" \
           -output hadoop_output_r"$runNumber"_i"$i" \
           -file "$TMP_DIR"/currentMeans.RData 
@@ -290,9 +290,9 @@ do
 	# -kx,xn specifies numeric sort in field x
         cat ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/part-* | sort -t . -k1,1n -k2,2n
       
-        # Run script on output; km_intermediary.R outputs currentMeans.RData, as well
+        # Run script on output; kmeans_intermediary.R outputs currentMeans.RData, as well
         # as the objective function for the current iteration.
-        objectiveArray[$i]=`cat ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/part-* | sort -t . -k1,1n -k2,2n | Rscript R/km_intermediary.R $EPSILON $SLURM_JOBID $runNumber $i $TMP_DIR`
+        objectiveArray[$i]=`cat ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/part-* | sort -t . -k1,1n -k2,2n | Rscript R/kmeans/kmeans_intermediary.R $EPSILON $SLURM_JOBID $runNumber $i $TMP_DIR`
 
         # break kmeans run early if objective is empty
         if [ ${objectiveArray[$i]} = 'NA' ]
@@ -341,8 +341,8 @@ do
       -D mapred.map.tasks=$NUM_MAP \
       -D mapred.reduce.tasks=$NUM_REDUCE \
       -D mapred.text.key.comparator.options="-n" \
-      -mapper "$RBIN_HOME/Rscript $PWD/R/km_summary_mapper.R $NUM_CHUNK" \
-      -reducer "$RBIN_HOME/Rscript $PWD/R/km_summary_reducer.R" \
+      -mapper "$RBIN_HOME/Rscript $PWD/R/kmeans/kmeans_summary_mapper.R $NUM_CHUNK" \
+      -reducer "$RBIN_HOME/Rscript $PWD/R/kmeans/kmeans_summary_reducer.R" \
       -input /data/"$DATANAME" \
       -output run_"$runNumber"/hadoop_stats \
       -file "$TMP_DIR"/currentMeans.RData 
@@ -354,7 +354,7 @@ do
     # save stats file
     echo  -e 'ClusterNumber\tClusterSize\tSSQ\tminvec\tsumvec\tmaxvec'  > ./$HADOOP_RES_DIR/run_$runNumber/stats/chunkStats.tsv
     cat ./$HADOOP_RES_DIR/run_$runNumber/stats/part-* | sort -t . -k1,1n -k2,2n >> ./$HADOOP_RES_DIR/run_$runNumber/stats/chunkStats.tsv
-    Rscript ./R/km_summary_intermediary.R ./$HADOOP_RES_DIR/run_$runNumber/stats/chunkStats.tsv ./$HADOOP_RES_DIR/run_$runNumber/stats/clusterStats.tsv
+    Rscript ./R/kmeans/kmeans_summary_intermediary.R ./$HADOOP_RES_DIR/run_$runNumber/stats/chunkStats.tsv ./$HADOOP_RES_DIR/run_$runNumber/stats/clusterStats.tsv
     echo
     echo "Show summary stats file contents:"
     cat ./$HADOOP_RES_DIR/run_$runNumber/stats/clusterStats.tsv
