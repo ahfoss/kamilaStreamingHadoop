@@ -91,7 +91,7 @@ rm(myMeans)
 # iter_[0-9]+ directory that contains it.
 # Loaded file contains the variable stored as "myMeans"
 load(file.path(
-  paste('myoutput-',JOBID,sep=''),
+  paste('output-kmeans-',JOBID,sep=''),
   paste('run_',CURR_RUN,sep=''),
   paste('iter_',CURR_IND - 1,sep=''),
   paste('currentMeans_i',CURR_IND,'.RData',sep='')

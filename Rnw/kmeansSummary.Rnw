@@ -76,11 +76,11 @@ sessionInfo()
 Please specify the data set used and job number in the original .Rnw document:
 <<uservals>>=
 # The full data set file name
-dataName = '../csv/cat1987-2008_v1_rmvna_norm.csv'
-JOBID = '5344386'
+dataName = '../csv/1987_HL_rmvna_norm.csv'
+JOBID = '5412886'
 
 # A subsampled version of the data set suitable for plotting, ~1000 observations
-subsampleData = '../csv/subsampled_2000_cat1987-2008_v1_rmvna_norm.csv'
+subsampleData = '../csv/subsampled_2000_1987_HL_rmvna_norm.csv'
 @
 
 \newpage
@@ -105,7 +105,7 @@ dataExt <- file_ext(dataName)
 #varInfo <- read.csv(paste(dataNameNoExt,'_stats.',dataExt,sep=''))
 conVarInfo <- read.csv(paste(spl[1],'constats.',dataExt,sep=''))
 numConVar <- nrow(conVarInfo)
-outputFileName <- paste('myoutput-',JOBID,sep='')
+outputFileName <- paste('output-kmeans-',JOBID,sep='')
 
 catVarInfo <- read.table(paste(spl[1],'catstats.',dataExt,sep=''),header=TRUE,sep='\t')
 levCounts <- as.numeric(unlist(strsplit(as.vector(catVarInfo$LevCounts),split=',')))
@@ -507,10 +507,10 @@ for (varNum in 1:ncol(minMat)) {
     )
   } else {
     clustTotalCounts <- clustInfoTab[,'Cluster Size']
-    ithClustCount <- ifelse(
+    ithClustPct <- ifelse(
       test = maxMat[,varNum] == 0,
       yes = 0,
-      no = meanMat[,varNum] / maxMat[,varNum] * clustTotalCounts
+      no = meanMat[,varNum] / maxMat[,varNum]
     )
     print(
       xtable(
@@ -519,8 +519,8 @@ for (varNum in 1:ncol(minMat)) {
           min = minMat[,varNum],
           mean = meanMat[,varNum],
           max = maxMat[,varNum],
-	  CountYes = ithClustCount,
-	  Percent = ithClustCount / clustTotalCounts * 100
+	  CountYes = ithClustPct * clustTotalCounts,
+	  Percent = ithClustPct * 100
 	),
 	digits = c(0,0,2,2,2,0,1),
         caption = paste('Cluster-specific stats for variable ',varNum,', ',allVarNames[varNum],'.',sep='')

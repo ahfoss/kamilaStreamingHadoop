@@ -2,7 +2,9 @@ csv/
 summary/
 logs/
 config-*/
+config-kmeans-*/
 myoutput-*/
+output-kmeans-*/
 tmp_*/
 test-*.out
 kmeansResults-*.out
@@ -10,4 +12,6 @@ Rnw/
 !Rnw/kmeansSummary.Rnw
 db/
 preprocessingResults*.err
+preprocessingHLResults*.err
 preprocessingResults*.out
+preprocessingHLResults*.out

@@ -1,4 +1,4 @@
-#!usr/bin/env python
+#!/usr/bin/env python
 
 documentation = '''
 Insert general description here.
@@ -33,7 +33,7 @@ Example:
 '''
 
 # Set maximum number of dummy vars per categorical variable
-MAX_NUM_LEV = 12
+MAX_NUM_LEV = 20
 
 # Set minimum number of observations a level must have to be included
 MIN_NUM_LEV_OBS = 10
@@ -61,13 +61,13 @@ DATA_FILE_NAME = sys.argv[1]
 TYPE_FILE_NAME = sys.argv[2]
 RMV_COL = [ int(elm) for elm in sys.argv[3:narg] ]
 fileParsed = os.path.splitext(DATA_FILE_NAME)
-outFileNameNoNA    = fileParsed[0] + "_rmvna" + fileParsed[1]
-outFileNameRowLog  = fileParsed[0] + "_rmvna_rowlog" + fileParsed[1]
-outFileNameColLog  = fileParsed[0] + "_rmvna_collog" + fileParsed[1]
-outFileLevelCounts = fileParsed[0] + "_rmvna_levelcounts" + fileParsed[1]
-outFileFinal       = fileParsed[0] + "_rmvna_norm" + fileParsed[1]
-outFileConStats    = fileParsed[0] + "_rmvna_constats" + fileParsed[1]
-outFileCatStats    = fileParsed[0] + "_rmvna_catstats" + fileParsed[1]
+outFileNameNoNA    = fileParsed[0] + "_HL_rmvna" + fileParsed[1]
+outFileNameRowLog  = fileParsed[0] + "_HL_rmvna_rowlog" + fileParsed[1]
+outFileNameColLog  = fileParsed[0] + "_HL_rmvna_collog" + fileParsed[1]
+outFileLevelCounts = fileParsed[0] + "_HL_rmvna_levelcounts" + fileParsed[1]
+outFileFinal       = fileParsed[0] + "_HL_rmvna_norm" + fileParsed[1]
+outFileConStats    = fileParsed[0] + "_HL_rmvna_constats" + fileParsed[1]
+outFileCatStats    = fileParsed[0] + "_HL_rmvna_catstats" + fileParsed[1]
 
 # type file with flagged vars removed
 typeFileParsed = os.path.splitext(TYPE_FILE_NAME)
@@ -180,7 +180,7 @@ with open(DATA_FILE_NAME,'r') as inFile1, open(outFileNameNoNA, 'w') as outFile1
                     colMins[i] = min(colMins[i],elmFloat)
                     colMaxs[i] = max(colMaxs[i],elmFloat)
         progress1 += 1
-        if progress1 % 10000 == 0:
+        if progress1 % 100000 == 0:
             print '%d lines processed for missing values...' % (progress1)
 
 print "Row missing table:"
@@ -190,6 +190,10 @@ print numMissingInCol
 
 # calculate column means
 numFullLines = rowMissingTable[0]
+if numFullLines < 1:
+    print "All data rows had a missing value. Exiting."
+    sys.exit()
+    
 colMeans = colSums / numFullLines
 colMeans = [ xx for (xx,tt) in zip(colMeans, boolConPre) if tt ]
 print "Column Means:"
@@ -316,7 +320,7 @@ with open(outFileNameNoNA, 'r') as inFile2:
             if boolConPost[i]:
                 sum2[i] += np.power(np.float64(elm) - colMeans[i], 2)
         progress2 += 1
-        if progress2 % 10000 == 0:
+        if progress2 % 100000 == 0:
             print '%d/%d lines processed...' % (progress2,numFullLines)
 
 colStdevs = np.sqrt(sum2 / (numFullLines-1))
@@ -387,7 +391,7 @@ with open(outFileNameNoNA, 'r') as inFile3, open(outFileFinal, 'w') as outFile2:
             allHlDummies += dumVec
         outFile2Writer.writerow(conZnorm+allHlDummies)
         progress3 += 1
-        if progress3 % 10000 == 0:
+        if progress3 % 100000 == 0:
             print '%d/%d lines processed...' % (progress3,numFullLines)
 
 print
