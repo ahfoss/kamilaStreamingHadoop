@@ -2,10 +2,13 @@
 
 documentation = '''
  For an input [1] sqlite db file, [2] table name, [3] number of subsampled
- lines, and [4] output csv file name, this program creates a subsampled data
- set of the specified size in csv format.
+ lines, [4] output csv file name, and [5] a string indicating which variables
+ should be selected, this program creates a subsampled data set of the specified
+ size in csv format.
 
- Usage: python py/subsampleSqlData.py mydbname.db mytablename 2000 outfile.csv
+ Argument 5 can be either 'all' or 'continuous'.
+
+ Usage: python py/subsampleSqlData.py mydbname.db mytablename 2000 outfile.csv all
 
  Output: outfile.csv
 '''
@@ -19,9 +22,9 @@ import sqlite3 as sql
 random.seed(1234)
 
 narg = len(sys.argv)
-if narg < 4:
+if narg < 5:
     print documentation
-    print "INSUFFIENT NUMBER OF ARGUMENTS SUPPLIED."
+    print "INSUFFIENT NUMBER OF ARGUMENTS SUPPLIED (" + str(narg) + ")."
     print "Exiting."
     sys.exit()
 
@@ -33,6 +36,13 @@ dbName = sys.argv[1]
 tableName = sys.argv[2]
 numSample = sys.argv[3]
 outFileName = sys.argv[4]
+whichVars = sys.argv[5]
+validVarSelection = ('all','continuous')
+if whichVars not in validVarSelection:
+    print 'Argument 5 must be one of ' + str(validVarSelection)
+    print 'You input ' + whichVars
+    print 'Exiting.'
+    sys.exit()
 
 # get number of lines in data, and make sure the rowid column is complete.
 con = sql.connect(dbName)

@@ -19,7 +19,7 @@ Example:
 DATESTRING = '%y/%m/%d-%H:%M:%S'
 
 narg = len(sys.argv)
-if narg < 2:
+if narg < 3:
     print documentation
     print "INSUFFICIENT NUMBER OF ARGUMENTS SUPPLIED."
     print "Exiting."

@@ -13,8 +13,6 @@ Usage: python py/preprocMixed.py DATA_FILE_NAME TYPE_FILE_NAME [optional integer
   For consistency, we recommend naming the type file *_types.csv, where *
   denotes original file name.
 
-Input:
-
 Output:
   Note "*" denotes the original file name.
 
@@ -51,7 +49,7 @@ import bisect
 import numpy as np
 
 narg = len(sys.argv)
-if narg < 2:
+if narg < 3:
     print documentation
     print "INSUFFICIENT NUMBER OF ARGUMENTS SUPPLIED."
     print "Exiting."

@@ -23,7 +23,7 @@ import random
 random.seed(1234)
 
 narg = len(sys.argv)
-if narg < 3:
+if narg < 4:
     print documentation
     print "INSUFFIENT NUMBER OF ARGUMENTS SUPPLIED."
     print "Exiting."
