@@ -25,7 +25,7 @@ filePath,fileBase = os.path.split(fileParsed[0])
 # create outfile names
 outFileName = fileParsed[0] + "_KAM_rmvna_norm" + fileParsed[1]
 sqlFileName = './db/' + fileBase + '.db'
-catStatsFileName = fileParsed[0] + '_KAM_rmvna_catstats' + fileParsed[1]
+catStatsFileName = fileParsed[0] + '_KAM_rmvna_catstats.tsv'
 #conStatsFileName = fileParsed[0] + '_KAM_rmvna_constats' + fileParsed[1]
 
 # list of variable names.
