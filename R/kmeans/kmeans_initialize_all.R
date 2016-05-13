@@ -1,5 +1,13 @@
 #!/util/academic/R/R-3.0.0/bin/Rscript
 
+# These objects and functions are only intended to be used by kmeans.slurm.
+#
+# This creates a preselected and pseudo-randomized object that contains all
+# centroids that may be used for initializing the kmeans runs. Randomization
+# is controlled by the input seed. If, during the kmeans runs, the number of
+# centroids is exhausted, they are re-randomized and reused. Centroids are
+# from a random subset of points in the larger data set.
+
 # Input arguments:
 # [1] SEED, an integer giving the initial seed for R's RNG state.
 # [2] OUT_DIR, where the RData file will be saved.
@@ -19,6 +27,9 @@ subsampledData <- read.csv(SUBSAMP)
 randInds <- sample(nrow(subsampledData))
 
 # create list to hold all info needed to generate random vecs
+# selectedVec: the current row of data; corresponds to first element of inds
+# inds: index of subsampled data in random order
+# data: the data inds maps onto
 currentQueue <- list(
   selectedVec = NULL,
   inds = randInds,

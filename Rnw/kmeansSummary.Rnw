@@ -77,7 +77,7 @@ Please specify the data set used and job number in the original .Rnw document:
 <<uservals>>=
 # The full data set file name
 dataName = '../csv/1987_HL_rmvna_norm.csv'
-JOBID = '5412886'
+JOBID = '5417510'
 
 # A subsampled version of the data set suitable for plotting, ~1000 observations
 subsampleData = '../csv/subsampled_2000_1987_HL_rmvna_norm.csv'
