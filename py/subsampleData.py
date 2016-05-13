@@ -19,6 +19,9 @@ import os.path
 import sys
 import random
 
+# change this if desired
+random.seed(1234)
+
 narg = len(sys.argv)
 if narg < 3:
     print documentation
@@ -43,7 +46,7 @@ print "---------------"
 
 print "Now generating random row indices"
 # generate random row numbers
-inds = random.sample(xrange(1,long(numLines)),int(numSample))
+inds = random.sample(xrange(1,long(numLines)+1),int(numSample))
 inds = list([0]) + inds # include initial header row
 
 # open new file
