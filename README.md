@@ -1,6 +1,7 @@
 # kmeansStreamingHadoop
-Lloyd's k-means algorithm written for MyHadoop on a SLURM batch scheduler
+Lloyd's k-means algorithm and KAMILA written for MyHadoop on a SLURM batch scheduler.
 
+# kmeans algorithm
 R files necessary to implement a bare-bones k-means clustering on a csv file.
 
 Input must be a csv file with the continuous variables to be clustered, and an RData file with the initialized cluster centers.
@@ -19,4 +20,5 @@ km\_reducer.r gives the reduce step
 km\_intermediary.r is executed in between successive map-reduce pairs
 genData.r generates example data
 
+# kamila algorithm
 

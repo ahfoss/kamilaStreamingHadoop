@@ -23,10 +23,10 @@ fileExt = fileParsed[1]
 filePath,fileBase = os.path.split(fileParsed[0])
 
 # create outfile names
-outFileName = fileParsed[0] + "_rmvna_norm" + fileParsed[1]
+outFileName = fileParsed[0] + "_KAM_rmvna_norm" + fileParsed[1]
 sqlFileName = './db/' + fileBase + '.db'
-#catStatsFileName = fileParsed[0] + '_rmvna_catstats' + fileParsed[1]
-#conStatsFileName = fileParsed[0] + '_rmvna_constats' + fileParsed[1]
+catStatsFileName = fileParsed[0] + '_KAM_rmvna_catstats' + fileParsed[1]
+#conStatsFileName = fileParsed[0] + '_KAM_rmvna_constats' + fileParsed[1]
 
 # list of variable names.
 varInfo = [
@@ -297,13 +297,13 @@ with con:
         outFileMainWriter.writerow(activeRealName + activeTextName)
         for row in cur:
             outFileMainWriter.writerow(['{:.8f}'.format(x) for x in row[0:numActiveCon]] + list(row[numActiveCon:]))
-#    # Write categorical summary stats
-#    cur.execute('SELECT * FROM catSummary')
-#    with open(catStatsFileName, 'w') as outFileCat:
-#        outFileCatWriter = csv.writer(outFileCat, delimiter='\t', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-#        outFileCatWriter.writerow(['VarName','VarIndex','CatIndex','NumLev','LevNames','LevCounts'])
-#        for row in cur:
-#            outFileCatWriter.writerow(row)
+    # Write categorical summary stats
+    cur.execute('SELECT * FROM catSummary')
+    with open(catStatsFileName, 'w') as outFileCat:
+        outFileCatWriter = csv.writer(outFileCat, delimiter='\t', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        outFileCatWriter.writerow(['VarName','VarIndex','CatIndex','NumLev','LevNames','LevCounts'])
+        for row in cur:
+            outFileCatWriter.writerow(row)
 #    # Write continuous summary stats
 #    cur.execute('SELECT * FROM conStats')
 #    with open(conStatsFileName, 'w') as outFileCon:
