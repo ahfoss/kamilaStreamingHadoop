@@ -59,7 +59,7 @@ NUM_CHUNK=4
 # Number of initializations of the kamila algorithm
 NUM_INIT=1
 # Max number of iterations per initialization
-MAX_NITER=2
+MAX_NITER=1
 # Tolerances for determining convergence; see README.txt
 # Converted to float
 EPSILON_CON=0.01
@@ -257,18 +257,21 @@ do
     do
         echo "--------ITER $i--------"
     
-        # Primary M-R step
+        # First M-R step: min dist KDE construction
         $HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR \
           jar /util/academic/hadoop/2.5.1/hadoop-2.5.1/share/hadoop/tools/lib/hadoop-streaming-2.5.1.jar \
           -D mapred.map.tasks=$NUM_MAP \
           -D mapred.reduce.tasks=$NUM_REDUCE \
           -D mapred.text.key.comparator.options="-n" \
-          -mapper "$RBIN_HOME/Rscript $PWD/R/kamila/kamila_mapper.R $NUM_CHUNK" \
-          -reducer "$RBIN_HOME/Rscript $PWD/R/kamila/kamila_reducer.R" \
+          -mapper "$RBIN_HOME/Rscript $PWD/R/kamila/kamila_mapper_1.R $NUM_CHUNK" \
+          -reducer "$RBIN_HOME/Rscript $PWD/R/kamila/kamila_reducer_1.R" \
           -input /data/"$DATANAME" \
           -output hadoop_output_r"$runNumber"_i"$i" \
-          -file "$TMP_DIR"/currentMeans.RData 
+          -file "$TMP_DIR"/currentMeans.RData
     
+############################################################
+## Updated from kmeans to kamila up to here ################
+############################################################
         echo "-------list output ---"
         # Get name of current output file
         $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -ls 

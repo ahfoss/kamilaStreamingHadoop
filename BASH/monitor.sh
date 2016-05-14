@@ -57,9 +57,9 @@ while squeue -u $1 | grep -q $SHORT_JOBNAME
   elif [ $mystate = "R" ]
   then
     {
-      currRun=`ls -1t output-kmeans-$JOBNUM 2> /dev/null | head -1 | xargs`
+      currRun=`ls -1t output-k?????-$JOBNUM 2> /dev/null | head -1 | xargs`
       printf " $currRun  "
-      ls output-kmeans-$JOBNUM/$currRun 2> /dev/null
+      ls output-k?????-$JOBNUM/$currRun 2> /dev/null
     } || {
       echo "Job submitted; no results yet"
     }

@@ -17,7 +17,7 @@ load(file.path(OUT_DIR, 'seeding.RData'))
 myMeans <- list()
 for (i in 1:NUM_CLUST) {
   currentQueue <- advanceQueue(currentQueue)
-  myMeans[[i]] <- list(centroids = currentQueue$selectedCentroid, thetas = currentQueue$selectedThetas)
+  myMeans[[i]] <- list(centroid = currentQueue$selectedCentroid, thetas = currentQueue$selectedThetas)
 }
 
 #dir.create(OUT_DIR) # already created in kmeans.slurm script

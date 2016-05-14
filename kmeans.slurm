@@ -53,12 +53,12 @@ NUM_MAP=14
 # Number of reducers
 NUM_REDUCE=14
 # The number of keys per cluster
-NUM_CHUNK=2
+NUM_CHUNK=3
 
 # Number of initializations of the kmeans algorithm
-NUM_INIT=2
+NUM_INIT=1
 # Max number of iterations per initialization
-MAX_NITER=3
+MAX_NITER=2
 # Tolerance for determining convergence; see README.txt
 # Converted to float
 EPSILON=0.01
