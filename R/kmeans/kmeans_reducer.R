@@ -14,7 +14,7 @@ f <- file("stdin")
 open(f)
 
 logClusterInfo <- function(clusterNum,robj,count) {
-  cat(clusterNum,'\t',deparse(robj),'\t',count,'\n',sep='')
+  cat(clusterNum,'\t',paste(deparse(robj),collapse=''),'\t',count,'\n',sep='')
 }
 
 last_key <- Inf
