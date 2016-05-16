@@ -185,45 +185,9 @@ $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -ls /data
 ##################################################
 ##################################################
 ##################################################
-## outer number init kamila loop starts here
 ## Outer loop starts here; each iteration is a unique
 ## kamila run. The best is chosen as the final
 ## partition.
-#
-# Structure of output:
-#
-# myoutput-[0-9]/
-#     run_1/
-#         iter_0/currentMeans_i1.RData
-#         iter_1/
-#             currentMeans_i2.RData
-#             currentObjective_i2.txt
-#             part-00000
-#             part-00001
-#             part-00002
-#             ...
-#             part-00???
-#         iter_2/etc
-#         ...
-#         stats/
-#     run_2/
-#         iter_0/
-#         iter_1/
-#         iter_2/
-#         ...
-#         stats/
-#     run_3/
-#         iter_0/
-#         iter_1/
-#         iter_2/
-#         ...
-#         stats/
-#     ...
-#     best_run/
-#         chunkStats.tsv
-#         clusterStats.tsv
-#         allWss.txt
-#
 ##################################################
 # create a variable to store within cluster sum of squares
 declare -a wssArray
@@ -266,37 +230,33 @@ do
           -mapper "$RBIN_HOME/Rscript $PWD/R/kamila/kamila_mapper_1.R $NUM_CHUNK" \
           -reducer "$RBIN_HOME/Rscript $PWD/R/kamila/kamila_reducer_1.R" \
           -input /data/"$DATANAME" \
-          -output hadoop_output_r"$runNumber"_i"$i" \
+          -output hadoop_output_r"$runNumber"_i"$i"/stage1 \
           -file "$TMP_DIR"/currentMeans.RData
     
-############################################################
-## Updated from kmeans to kamila up to here ################
-############################################################
         echo "-------list output ---"
         # Get name of current output file
-        $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -ls 
-        $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -ls hadoop_output_r"$runNumber"_i$i/
-        THIS_OUTPUT=`$HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -ls hadoop_output_r"$runNumber"_i$i/part-* | awk -F'/' '{print $2}'`
-        echo
-        echo Current output files are: $THIS_OUTPUT
-        echo
+        $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -ls hadoop_output_r"$runNumber"_i$i/stage1/
       
         # Copy output to local dir
-        mkdir ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/
-        for ff in $THIS_OUTPUT
-          do echo Copying $ff
-          $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -get hadoop_output_r"$runNumber"_i$i/$ff ./$HADOOP_RES_DIR/run_$runNumber/iter_$i
-          echo
-          cat ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/$ff
-          echo
-        done
+        mkdir -p ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/stage1/
+        $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -get \
+          hadoop_output_r"$runNumber"_i$i/stage1/part-* \
+          ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/stage1
     
-        echo Contents of $HADOOP_RES_DIR/run_$runNumber/iter_$i
-        ls -lht ./$HADOOP_RES_DIR/run_$runNumber/iter_$i
+        echo Contents of $HADOOP_RES_DIR/run_$runNumber/iter_$i/stage1
+        ls -lht ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/stage1
         echo Concatenated sum/count vectors:
 	# -t . option specifies . as delimiter
 	# -kx,xn specifies numeric sort in field x
-        cat ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/part-* | sort -t . -k1,1n -k2,2n
+        cat ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/stage1/part-* | sort -t . -k1,1n -k2,2n
+
+	# Calculate radial KDE
+        cat ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/stage1/part-* | sort -t . -k1,1n -k2,2n | Rscript R/kamila/kamila_intermediary_1.R $TMP_DIR
+
+
+############################################################
+## Updated from kmeans to kamila up to here ################
+############################################################
       
         # Run script on output; kamila_intermediary.R outputs currentMeans.RData, as well
         # as the objective function for the current iteration.

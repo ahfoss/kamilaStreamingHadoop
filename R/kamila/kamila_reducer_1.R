@@ -13,7 +13,6 @@
 
 load('currentMeans.RData') # for myMeans; number of continuous vars
 
-#source('R/helperFunctions.R') # for initHist, updateHist, and mergeHists
 # Two functions to create and update histograms on the
 # interval [0, 8*sqrt(ndim)] where ndim is the dimensionality
 # of the data
@@ -22,8 +21,7 @@ initHist <- function(ndim,nbin=1e4) {
   width <- maxVal / nbin
   myHist <- list(
     counts = rep(0,nbin),
-    width = width,
-    maxVal = maxVal
+    width = width
   )
   return(myHist)
 }
