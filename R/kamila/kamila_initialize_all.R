@@ -18,7 +18,7 @@
 # [4] CATINFO, the path and filename to tsv metadata file describing, among
 #     other things, the number of categorical levels per categorical variable.
 
-require(gtools) # for rdirichlet
+library(gtools) # for rdirichlet
 
 argIn <- commandArgs(TRUE)
 INITIAL_SEED <- as.integer(argIn[1])
