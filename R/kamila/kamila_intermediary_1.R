@@ -11,7 +11,7 @@ argIn <- commandArgs(TRUE)
 OUT_DIR <- argIn[1]
 
 load(file.path(OUT_DIR,'currentMeans.RData')) # for myMeans; number of continuous vars
-numConVars <- length(myMeans[[1]]$centroid)
+numConVars <- length(myMeans[[1]][['centroid']])
 
 # function to aggregate histograms
 addHists <- function(hist1,hist2) {

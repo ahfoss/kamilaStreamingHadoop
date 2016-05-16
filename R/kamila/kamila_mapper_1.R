@@ -14,8 +14,8 @@ NUM_CHUNK <- as.numeric(argIn[1])
 load('currentMeans.RData')
 
 if (!exists('myMeans')) stop("Mean RData file not found")
-nMeans <- length(myMeans)
-numConVars <- length(myMeans[[1]]$centroid)
+numCentroids <- length(myMeans)
+numConVars <- length(myMeans[[1]][['centroid']])
 
 f <- file("stdin")
 open(f)
@@ -26,8 +26,8 @@ while(length(line <- readLines(f,n=1)) > 0) {
   # Get nearest continuous centroid number
   smallestDist <- Inf
   closestCent <- -1
-  for (i in 1:nMeans) {
-    ithDist <- dist(rbind(myMeans[[i]]$centroid,vec))
+  for (i in 1:numCentroids) {
+    ithDist <- dist(rbind(myMeans[[i]][['centroid']],vec))
     if (ithDist < smallestDist) {
       smallestDist <- ithDist
       closestCent <- i

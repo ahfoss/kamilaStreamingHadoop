@@ -1,6 +1,6 @@
 #!/util/academic/R/R-3.0.0/bin/Rscript
 
-# Calculate cluster-level means
+# Calculate binned min distances from points to centroids
 # write out file:
 # 1.1 \t "robj"
 # 1.2 \t "robj"
@@ -34,7 +34,7 @@ updateHist <- function(myHist, val) {
   return(myHist)
 }
 
-numConVars <- length(myMeans[[1]]$centroid)
+numConVars <- length(myMeans[[1]][['centroid']])
 
 f <- file("stdin")
 open(f)

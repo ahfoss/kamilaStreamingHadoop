@@ -8,7 +8,7 @@
 # 2.2 \t "robj" \t 33
 # ...
 #
-# where first col is (cluster id).(chunk id number), and robj is deparsed centroid object (totals, not means), and third column is the count for that cluster.
+# where first col is (cluster id).(chunk id number), and robj is deparsed centroid object (totals, not means), and third column is the count for that cluster chunk.
 
 f <- file("stdin")
 open(f)
@@ -31,8 +31,7 @@ while(length(line <- readLines(f,n=1)) > 0) {
     # executed if still within same cluster
     running_total <- running_total + value
     clustCount <- clustCount + 1
-  } else {
-    # executed when ending a cluster or starting the first
+  } else { # executed when ending a cluster or starting the first
     if (last_key!=Inf) {
       # executed when ending a cluster
       logClusterInfo(last_key,running_total,clustCount)

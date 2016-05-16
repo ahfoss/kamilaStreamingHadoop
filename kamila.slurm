@@ -221,6 +221,7 @@ do
     do
         echo "--------ITER $i--------"
     
+        echo "---M-R stage1---"
         # First M-R step: min dist KDE construction
         $HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR \
           jar /util/academic/hadoop/2.5.1/hadoop-2.5.1/share/hadoop/tools/lib/hadoop-streaming-2.5.1.jar \
@@ -245,7 +246,7 @@ do
     
         echo Contents of $HADOOP_RES_DIR/run_$runNumber/iter_$i/stage1
         ls -lht ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/stage1
-        echo Concatenated sum/count vectors:
+        echo Concatenated histogram vectors:
 	# -t . option specifies . as delimiter
 	# -kx,xn specifies numeric sort in field x
         cat ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/stage1/part-* | sort -t . -k1,1n -k2,2n
@@ -253,12 +254,40 @@ do
 	# Calculate radial KDE
         cat ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/stage1/part-* | sort -t . -k1,1n -k2,2n | Rscript R/kamila/kamila_intermediary_1.R $TMP_DIR
 
-
+        echo "---M-R stage2---"
+        # Second M-R step: Cluster allocation and centroid re-estimation.
+        $HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR \
+          jar /util/academic/hadoop/2.5.1/hadoop-2.5.1/share/hadoop/tools/lib/hadoop-streaming-2.5.1.jar \
+          -D mapred.map.tasks=$NUM_MAP \
+          -D mapred.reduce.tasks=$NUM_REDUCE \
+          -D mapred.text.key.comparator.options="-n" \
+          -mapper "$RBIN_HOME/Rscript $PWD/R/kamila/kamila_mapper_2.R $NUM_CHUNK" \
+          -reducer "$RBIN_HOME/Rscript $PWD/R/kamila/kamila_reducer_2.R" \
+          -input /data/"$DATANAME" \
+          -output hadoop_output_r"$runNumber"_i"$i"/stage2 \
+          -file "$TMP_DIR"/currentMeans.RData
+    
+        echo "-------list output ---"
+        # Get name of current output file
+        $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -ls hadoop_output_r"$runNumber"_i$i/stage2/
+      
+        # Copy output to local dir
+        mkdir -p ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/stage2/
+        $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -get \
+          hadoop_output_r"$runNumber"_i$i/stage2/part-* \
+          ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/stage2
+    
+        echo Contents of $HADOOP_RES_DIR/run_$runNumber/iter_$i/stage2
+        ls -lht ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/stage2
+        echo Concatenated centroid chunk sum/count vectors:
+	# -t . option specifies . as delimiter
+	# -kx,xn specifies numeric sort in field x
+        cat ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/stage2/part-* | sort -t . -k1,1n -k2,2n
 ############################################################
 ## Updated from kmeans to kamila up to here ################
 ############################################################
       
-        # Run script on output; kamila_intermediary.R outputs currentMeans.RData, as well
+        # Run script on output; kamila_intermediary_2.R outputs currentMeans.RData, as well
         # as the objective function for the current iteration.
 	####################
 	####################
