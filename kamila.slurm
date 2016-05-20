@@ -190,10 +190,15 @@ $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -ls /data
 ## partition.
 ##################################################
 # create a variable to store within cluster sum of squares
-declare -a wssArray
+declare -a pseudoLogLik
 
 # Initialize seed and associated objects for pseudorandom RNG
 mkdir $TMP_DIR
+
+# Initialize log file for parameter differences from ith and (i-1)th iterations
+# Used to assess convergence
+echo "i,condiff,catdiff" > $TMP_DIR/paramDiff.csv
+
 Rscript R/kamila/kamila_initialize_all.R \
     $INITIAL_SEED \
     $TMP_DIR \
@@ -212,10 +217,6 @@ do
     mkdir -p ./$HADOOP_RES_DIR/run_$runNumber/iter_0/
     cp $TMP_DIR/initialMeans.RData \
         ./$HADOOP_RES_DIR/run_$runNumber/iter_0/currentMeans_i1.RData
-    
-    # Create variable to store values used to assess convergence
-    unset objectiveArray
-    declare -a objectiveArray
     
     for i in `seq 1 $MAX_NITER`
     do
@@ -249,7 +250,7 @@ do
         echo Concatenated histogram vectors:
 	# -t . option specifies . as delimiter
 	# -kx,xn specifies numeric sort in field x
-        cat ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/stage1/part-* | sort -t . -k1,1n -k2,2n
+        #cat ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/stage1/part-* | sort -t . -k1,1n -k2,2n
 
 	# Calculate radial KDE
         cat ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/stage1/part-* | sort -t . -k1,1n -k2,2n | Rscript R/kamila/kamila_intermediary_1.R $TMP_DIR
@@ -283,44 +284,36 @@ do
 	# -t . option specifies . as delimiter
 	# -kx,xn specifies numeric sort in field x
         cat ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/stage2/part-* | sort -t . -k1,1n -k2,2n
-############################################################
-## Updated from kmeans to kamila up to here ################
-############################################################
       
         # Run script on output; kamila_intermediary_2.R outputs currentMeans.RData, as well
         # as the objective function for the current iteration.
-	####################
-	####################
-	# EPSILON_CON and EPSILON_CAT
-	####################
-	####################
-        objectiveArray[$i]=`cat ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/part-* | sort -t . -k1,1n -k2,2n | Rscript R/kamila/kamila_intermediary.R $EPSILON $SLURM_JOBID $runNumber $i $TMP_DIR`
 
-        # break kamila run early if objective is empty
-        if [ ${objectiveArray[$i]} = 'NA' ]
-        then
-          echo
-          echo "--------------------"
-          echo "ERROR in calculating distance between centroids"
-          echo "FAILURE: BREAKING KAMILA RUN EARLY"
-          echo "--------------------"
-          echo
-          break
-        fi
-  
-        echo "Current value of objective array is "${objectiveArray[*]}
-        echo ${objectiveArray[*]} > ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/currentObjective_i$(expr $i + 1).txt
-        #ls -lh ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/currentMeans_i$(expr $i + 1).RData
+        # Logs current parameter differences in $TMP_DIR/paramDiff.csv
+        cat ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/stage2/part-* | \
+	  sort -t . -k1,1n -k2,2n | \
+	  Rscript R/kamila/kamila_intermediary_2.R $SLURM_JOBID $runNumber $i $TMP_DIR >> \
+	  $TMP_DIR/paramDiff.csv
+
+        echo "Current value of objective array is:"
+	head -1 $TMP_DIR/paramDiff.csv 
+	tail -1 $TMP_DIR/paramDiff.csv 
+        cp $TMP_DIR/paramDiff.csv ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/currentObjective_i$(expr $i + 1).csv
         cp $TMP_DIR/currentMeans.RData ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/currentMeans_i$(expr $i + 1).RData
-        #ls -lh ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/currentMeans_i$(expr $i + 1).RData
-      
+#      
         # check if convergence criteria is met
-	####################
-	####################
-	# EPSILON_CON and EPSILON_CAT
-	####################
-	####################
-        if (( $(bc <<< "${objectiveArray[$i]} < $EPSILON") ))
+	paramDiffCon=`tail -1 $TMP_DIR/paramDiff.csv | awk -F',' '{print $2}'`
+	paramDiffCat=`tail -1 $TMP_DIR/paramDiff.csv | awk -F',' '{print $3}'`
+	regex='^[0-9]+([.][0-9]+)?$'
+	if ! [[ $paramDiffCon =~ $regex ]]
+	then
+	  echo "Error: paramDiffCon ("$paramDiffCon") is not a number" >&2; exit 1
+	fi
+	if ! [[ $paramDiffCat =~ $regex ]]
+	then
+	  echo "Error: paramDiffCat ("$paramDiffCat") is not a number" >&2; exit 1
+	fi
+
+        if (( $(bc <<< "$paramDiffCon < $EPSILON_CON && $paramDiffCat < $EPSILON_CAT") ))
         then
           # if convergence criteria is met, then break this kamila run
           echo "Convergence criteria met: Breaking kamila run early"
@@ -329,6 +322,10 @@ do
     
     # end of this kamila iter
     done
+
+############################################################
+## Updated from kmeans to kamila up to here ################
+############################################################
     
     ##################################################
     echo "Summary stats M-R run:"
@@ -356,23 +353,27 @@ do
     
     # tabulate and store summary stats
     mkdir ./$HADOOP_RES_DIR/run_$runNumber/stats/
-    $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -get run_"$runNumber"/hadoop_stats/part-* ./$HADOOP_RES_DIR/run_$runNumber/stats/
+    $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -get \
+      run_"$runNumber"/hadoop_stats/part-* \
+      ./$HADOOP_RES_DIR/run_$runNumber/stats/
     
     # save stats file
-    echo  -e 'ClusterNumber\tClusterSize\tSSQ\tminvec\tsumvec\tmaxvec'  > ./$HADOOP_RES_DIR/run_$runNumber/stats/chunkStats.tsv
-    cat ./$HADOOP_RES_DIR/run_$runNumber/stats/part-* | sort -t . -k1,1n -k2,2n >> ./$HADOOP_RES_DIR/run_$runNumber/stats/chunkStats.tsv
-    Rscript ./R/kamila/kamila_summary_intermediary.R ./$HADOOP_RES_DIR/run_$runNumber/stats/chunkStats.tsv ./$HADOOP_RES_DIR/run_$runNumber/stats/clusterStats.tsv
+    echo  -e 'ClusterNumber\tClusterSize\tSSQ\tminvec\tsumvec\tmaxvec'  > \
+      ./$HADOOP_RES_DIR/run_$runNumber/stats/chunkStats.tsv
+    cat ./$HADOOP_RES_DIR/run_$runNumber/stats/part-* | sort -t . -k1,1n -k2,2n \
+      >> ./$HADOOP_RES_DIR/run_$runNumber/stats/chunkStats.tsv
+    Rscript ./R/kamila/kamila_summary_intermediary.R \
+      ./$HADOOP_RES_DIR/run_$runNumber/stats/chunkStats.tsv \
+      ./$HADOOP_RES_DIR/run_$runNumber/stats/clusterStats.tsv
     echo
     echo "Show summary stats file contents:"
     cat ./$HADOOP_RES_DIR/run_$runNumber/stats/clusterStats.tsv
     
-    # calculate and store total WSS
-    #wssArray[$(($runNumber-1))]=`awk -F'\t' 'NR > 1 { sum += $3 } END { print sum }' ./$HADOOP_RES_DIR/run_$runNumber/stats/clusterStats.tsv`
-    # awk version above returns zero if no arguments. Rscript below gives 
-    # error as expected.
-    wssArray[$(($runNumber-1))]=`Rscript -e "sdat <- read.table('./$HADOOP_RES_DIR/run_$runNumber/stats/clusterStats.tsv',header=TRUE,sep='\t'); cat(sum(sdat[,'SSQ']))"`
-    echo "Total WSS for this run is "${wssArray[$(($runNumber-1))]}
-    echo ${wssArray[$(($runNumber-1))]} > ./$HADOOP_RES_DIR/run_$runNumber/stats/totalWss.txt
+    # calculate and store total pseudo log likelihood
+    pseudoLogLik[$(($runNumber-1))]=`Rscript -e \
+      "sdat <- read.table('./$HADOOP_RES_DIR/run_$runNumber/stats/clusterStats.tsv',header=TRUE,sep='\t'); cat(sum(sdat[,'SSQ']))"`
+    echo "Total Pseudo Log Lik for this run is "${pseudoLogLik[$(($runNumber-1))]}
+    echo ${pseudoLogLik[$(($runNumber-1))]} > ./$HADOOP_RES_DIR/run_$runNumber/stats/totalPll.txt
     ##################################################
     echo "End of summary stats M-R run"
     ##################################################
@@ -387,9 +388,9 @@ do
 done
 rm -r $TMP_DIR
 
-# write out wss values for all runs
+# write out Pll values for all runs
 mkdir ./$HADOOP_RES_DIR/best_run
-echo ${wssArray[*]} > ./$HADOOP_RES_DIR/best_run/allWss.txt
+echo ${pseudoLogLik[*]} > ./$HADOOP_RES_DIR/best_run/allPll.txt
 
 # gather and write out stats on first MR run to file
 FAIL_STATUS=`sed '/list output/q' $SLURM_OUTFILE | grep "Streaming Command Failed" | awk '{print $3}'`

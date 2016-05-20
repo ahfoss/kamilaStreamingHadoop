@@ -148,7 +148,7 @@ with(kdeStats,
 # debugging ascii plots
 #with(radKDE,txtplot::txtplot(x,y))
 #with(radKDE,txtplot::txtplot(x,newY))
-txtplot::txtcurve(kdeStats$resampler(x), from=0, to=max(radKDE$x))
+#txtplot::txtcurve(kdeStats$resampler(x), from=0, to=max(radKDE$x))
 txtplot::txtcurve(log(kdeStats$resampler(x)), from=0, to=max(radKDE$x))
 
 save(myMeans,kdeStats,file=file.path(OUT_DIR,'currentMeans.RData'))
