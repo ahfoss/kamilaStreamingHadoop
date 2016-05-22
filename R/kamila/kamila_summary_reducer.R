@@ -2,11 +2,11 @@
 
 # Calculate cluster-level means, multinomial thetas
 #
-# Input file:
-# 1.1 \t datavec
-# 1.2 \t datavec
-# 2.1 \t datavec
-# 2.2 \t datavec
+# Input file: clust/chunk id, distance to centroid, data vec
+# 1.1 \t 3.425 \t datavec
+# 1.2 \t 2.744 \t datavec
+# 2.1 \t 6.257 \t datavec
+# 2.2 \t 3.362 \t datavec
 # ...
 #
 # write out file:
@@ -36,6 +36,7 @@ makeSummaryObject <- function() {
   return(list(
     con = list(min=rep(Inf,numConVars), max=rep(-Inf,numConVars), totals=rep(0,numConVars)),
     cat = lapply(myMeans[[1]][['thetas']], FUN=function(elm) rep(0,length(elm))),
+    totalDistToCentroid = 0,
     count = 0
   ))
 }
@@ -43,9 +44,11 @@ makeSummaryObject <- function() {
 # Add vec to total; a poor man's mutator method for totalList, an object
 # initialized by makeSummaryObject(). Global assignment is used to avoid
 # passing the modified object.
-addVecToTotal <- function(newVec) {
+addVecToTotal <- function(newVec, newDist) {
   # update count
   totalList$count  <<- totalList$count + 1
+  # update total distance to centroid
+  totalList$totalDistToCentroid <<- totalList$totalDistToCentroid + newDist
   # update continuous
   thisConVec <- newVec[1:numConVars]
   totalList$con$totals <<- totalList$con$totals + thisConVec
@@ -70,13 +73,14 @@ last_key <- Inf
 
 while(length(line <- readLines(f,n=1)) > 0) {
   # Unpack data streaming into stdin from Hadoop
-  this_kvpair <- unlist(strsplit(line,split="\t"))
-  this_key <- this_kvpair[1]
-  value <- as.numeric(unlist(strsplit(this_kvpair[2],split=",")))
+  this_kvtuple <- unlist(strsplit(line,split="\t"))
+  this_key <- this_kvtuple[1]
+  eucDist <- as.numeric(this_kvtuple[2])
+  dataVec <- as.numeric(unlist(strsplit(this_kvtuple[3],split=",")))
 
   if (last_key == this_key) {
     # executed if still within same cluster
-    addVecToTotal(value)
+    addVecToTotal(dataVec,eucDist)
   } else { # executed when ending a cluster or starting the first
     if (last_key!=Inf) {
       # executed when ending a cluster

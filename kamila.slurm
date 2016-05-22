@@ -337,7 +337,7 @@ do
       -D mapred.map.tasks=$NUM_MAP \
       -D mapred.reduce.tasks=$NUM_REDUCE \
       -D mapred.text.key.comparator.options="-n" \
-      -mapper "$RBIN_HOME/Rscript $PWD/R/kamila/kamila_mapper_2.R $NUM_CHUNK" \
+      -mapper "$RBIN_HOME/Rscript $PWD/R/kamila/kamila_summary_mapper.R $NUM_CHUNK" \
       -reducer "$RBIN_HOME/Rscript $PWD/R/kamila/kamila_summary_reducer.R" \
       -input /data/"$DATANAME" \
       -output run_"$runNumber"/hadoop_stats \

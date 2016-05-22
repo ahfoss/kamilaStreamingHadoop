@@ -7,6 +7,14 @@
 #
 # Input arguments:
 # [1] FILE_DIR, location for output RData file
+#
+# Each stdin line input is of the format:
+# 1.1 \t "robj"
+# 1.2 \t "robj"
+# 2.1 \t "robj"
+# 2.2 \t "robj"
+# ...
+#
 
 # get input arguments
 argIn <- commandArgs(TRUE)
@@ -36,6 +44,9 @@ updateTotalList <- function(totalList, newVal, keyInt) {
   # update count
   totalList[[keyInt]]$count <- (
     totalList[[keyInt]]$count + newVal$count)
+  # update total dist
+  totalList[[keyInt]]$totalDistToCentroid <- (
+    totalList[[keyInt]]$totalDistToCentroid + newVal$totalDistToCentroid)
   # update con stats
   totalList[[keyInt]]$con$totals <- (
     totalList[[keyInt]]$con$totals + newVal$con$totals)
@@ -51,12 +62,6 @@ updateTotalList <- function(totalList, newVal, keyInt) {
   return(totalList)
 }
 
-# Input has the format:
-# 1.1 \t "robj"
-# 1.2 \t "robj"
-# 2.1 \t "robj"
-# 2.2 \t "robj"
-# ...
 #
 # Note that the major key is of interest, and the minor isn't
 while (length(line <- readLines(f,n=1)) > 0) {
@@ -74,6 +79,7 @@ clustSummary <- lapply(
   FUN = function(elm) {
     clusterInfo <- list()
     clusterInfo$count <- elm$count
+    clusterInfo$totalDistToCentroid <- elm$totalDistToCentroid
     clusterInfo$con$means <- elm$con$totals / elm$count
     clusterInfo$con$min <- elm$con$min
     clusterInfo$con$max <- elm$con$max
