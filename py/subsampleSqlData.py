@@ -1,10 +1,10 @@
 #!/usr/bin/python
 
 documentation = '''
- For an input [1] sqlite db file, [2] table name, [3] number of subsampled
- lines, [4] output csv file name, and [5] a string indicating which variables
- should be selected, this program creates a subsampled data set of the specified
- size in csv format.
+ For an input [1] sqlite db file, [2] table name within sqlite db, [3] number
+ of subsampled lines, [4] output csv file name, and [5] a string indicating
+ which variables should be selected, this program creates a subsampled data
+ set of the specified size in csv format.
 
  Argument 5 can be either 'all' or 'continuous'.
 

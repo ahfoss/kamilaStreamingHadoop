@@ -17,7 +17,8 @@ maxNumCatLev = 20
 overThreshLevName = 'Other'
 
 # parse input data file
-inFileName = './csv/1987.csv'
+#inFileName = './csv/1987.csv'
+inFileName = './csv/smallMixed.csv'
 fileParsed = os.path.splitext(inFileName)
 fileExt = fileParsed[1]
 filePath,fileBase = os.path.split(fileParsed[0])
@@ -28,38 +29,45 @@ sqlFileName = './db/' + fileBase + '.db'
 catStatsFileName = fileParsed[0] + '_KAM_rmvna_catstats.tsv'
 #conStatsFileName = fileParsed[0] + '_KAM_rmvna_constats' + fileParsed[1]
 
-# list of variable names.
+# list of variable names, type, and include (true/false)
 varInfo = [
-  ('Year',              'real',False),
-  ('Month',             'text',True),
-  ('DayofMonth',        'text',False),
-  ('DayOfWeek',         'text',True),
-  ('DepTime',           'real',True),
-  ('CRSDepTime',        'real',True),
-  ('ArrTime',           'real',False),
-  ('CRSArrTime',        'real',False),
-  ('UniqueCarrier',     'text',True),
-  ('FlightNum',         'text',False),
-  ('TailNum',           'text',False),
-  ('ActualElapsedTime', 'real',True),
-  ('CRSElapsedTime',    'real',True),
-  ('AirTime',           'real',False),
-  ('ArrDelay',          'real',False),
-  ('DepDelay',          'real',False),
-  ('Origin',            'text',True),
-  ('Dest',              'text',False),
-  ('Distance',          'real',False),
-  ('TaxiIn',            'real',False),
-  ('TaxiOut',           'real',False),
-  ('Cancelled',         'text',True),
-  ('CancellationCode',  'text',False),
-  ('Diverted',          'text',False),
-  ('CarrierDelay',      'real',False),
-  ('WeatherDelay',      'real',False),
-  ('NASDelay',          'real',False),
-  ('SecurityDelay',     'real',False),
-  ('LateAircraftDelay', 'real',False)
+  ('C1',    'real', True),
+  ('D1',    'text', True),
+  ('C2',    'real', True),
+  ('D2',    'text', True),
+  ('D3',    'text', True),
 ]
+#varInfo = [
+#  ('Year',              'real',False),
+#  ('Month',             'text',True),
+#  ('DayofMonth',        'text',False),
+#  ('DayOfWeek',         'text',True),
+#  ('DepTime',           'real',True),
+#  ('CRSDepTime',        'real',True),
+#  ('ArrTime',           'real',False),
+#  ('CRSArrTime',        'real',False),
+#  ('UniqueCarrier',     'text',True),
+#  ('FlightNum',         'text',False),
+#  ('TailNum',           'text',False),
+#  ('ActualElapsedTime', 'real',True),
+#  ('CRSElapsedTime',    'real',True),
+#  ('AirTime',           'real',False),
+#  ('ArrDelay',          'real',False),
+#  ('DepDelay',          'real',False),
+#  ('Origin',            'text',True),
+#  ('Dest',              'text',False),
+#  ('Distance',          'real',False),
+#  ('TaxiIn',            'real',False),
+#  ('TaxiOut',           'real',False),
+#  ('Cancelled',         'text',True),
+#  ('CancellationCode',  'text',False),
+#  ('Diverted',          'text',False),
+#  ('CarrierDelay',      'real',False),
+#  ('WeatherDelay',      'real',False),
+#  ('NASDelay',          'real',False),
+#  ('SecurityDelay',     'real',False),
+#  ('LateAircraftDelay', 'real',False)
+#]
 allVarName = [ x[0] for x in varInfo ]
 allVarType = [ x[1] for x in varInfo ]
 activeVarBool = [ x[2] for x in varInfo ]
@@ -97,7 +105,7 @@ with con:
     print "SQLite version: %s" % versionInfo
 
     # Initialize data table
-    cur.execute('CREATE TABLE inputTable(' +
+    cur.execute('CREATE TABLE rawInput(' +
         ','.join([x+' '+y for x,y in zip(activeVarName,activeVarType) ]) +
         ')'
     )
@@ -111,10 +119,10 @@ with con:
         questionMarkString = ','.join(['?']*numVar)
         mygetter = itemgetter(*activeVarInd)
         for row in inReader:
-            cur.execute('INSERT INTO inputTable VALUES (' + questionMarkString + ')', mygetter(row) )
+            cur.execute('INSERT INTO rawInput VALUES (' + questionMarkString + ')', mygetter(row) )
 
     # print number of rows
-    cur.execute('SELECT count(*) FROM inputTable')
+    cur.execute('SELECT count(*) FROM rawInput')
     rawCount = cur.fetchone()[0]
     print "Read in " + str(rawCount) + " lines from " + inFileName
 
@@ -125,7 +133,7 @@ with con:
     cur = con.cursor()
     cur.execute('CREATE TABLE colMissing(variable text, numMissing integer)')
     for vv in activeRealName:
-        cur.execute("INSERT INTO colMissing SELECT '" + vv + "',count(" + vv + ") FROM inputTable WHERE typeof(" + vv + ")=='text'")
+        cur.execute("INSERT INTO colMissing SELECT '" + vv + "',count(" + vv + ") FROM rawInput WHERE typeof(" + vv + ")=='text'")
     cur.execute('SELECT * FROM colMissing')
     colMiss = cur.fetchall()
     print
@@ -143,7 +151,7 @@ with con:
           SELECT numMissing, count(numMissing)
           FROM (
             SELECT ''' + '+'.join(["(typeof("+x+")=='text')" for x in activeRealName]) + ''' AS numMissing
-            FROM inputTable
+            FROM rawInput
           )
           GROUP BY numMissing
     ''')
@@ -160,9 +168,9 @@ with con:
 con = sql.connect(sqlFileName)
 with con:
     cur = con.cursor()
-    cur.execute("DELETE FROM inputTable WHERE " +
+    cur.execute("DELETE FROM rawInput WHERE " +
         " OR ".join(["typeof("+x+")=='text'" for x in activeRealName]))
-    cur.execute('SELECT count(*) FROM inputTable')
+    cur.execute('SELECT count(*) FROM rawInput')
     procCount = cur.fetchone()[0]
     print
     print str(procCount) + " records remaining after NA removal."
@@ -184,7 +192,7 @@ with con:
             vv + 
             "), COUNT(" +
             vv + 
-            ") FROM inputTable"
+            ") FROM rawInput"
         )
     for vv in activeRealName:
         cur.execute("INSERT INTO twoPass SELECT '" +
@@ -193,7 +201,7 @@ with con:
             vv + 
             "-mean)*(" + 
             vv + 
-            "-mean))/(n-1) FROM inputTable CROSS JOIN (SELECT mean, n FROM onePass WHERE variable=='" +
+            "-mean))/(n-1) FROM rawInput CROSS JOIN (SELECT mean, n FROM onePass WHERE variable=='" +
             vv + 
             "')"
         )
@@ -227,7 +235,7 @@ with con:
         cur.execute("CREATE TABLE "
             + vv + "raw AS SELECT "
             + vv + " AS Level, COUNT("
-            + vv + ") AS numObs FROM inputTable GROUP BY "
+            + vv + ") AS numObs FROM rawInput GROUP BY "
             + vv + " ORDER BY numObs DESC"
         )
         cur.execute("SELECT * FROM " + vv + "raw")
@@ -278,10 +286,10 @@ print otherInds
 con = sql.connect(sqlFileName)
 with con:
     cur = con.cursor()
-    cur.execute('CREATE TABLE inputProc1 AS SELECT ' + 
+    cur.execute('CREATE TABLE finalDataSet AS SELECT ' + 
         ', '.join([ '(t1.' + vv + ' - ' + str(allStats[i][3]) + ')/' + str(allStats[i][4]) + ' AS ' + vv for i,vv in enumerate(activeRealName)]) + ',' + 
         ', '.join([ 'ifnull(' + vv + "thresh.rowid," + str(otherInds[vv]) + ") AS " + vv for vv in activeTextName]) + 
-        ' FROM inputTable AS t1 ' + 
+        ' FROM rawInput AS t1 ' + 
         ' '.join([ 'LEFT JOIN ' + vv + 'thresh ON t1.' + vv + '=' + vv + 'thresh.Level' for vv in activeTextName])
     )
 
@@ -290,7 +298,7 @@ con = sql.connect(sqlFileName)
 with con:
     cur = con.cursor()
     # write main data file
-    cur.execute('SELECT * FROM inputProc1')
+    cur.execute('SELECT * FROM finalDataSet')
     with open(outFileName, 'w') as outFileMain:
         outFileMainWriter = csv.writer(outFileMain)
         # write header
