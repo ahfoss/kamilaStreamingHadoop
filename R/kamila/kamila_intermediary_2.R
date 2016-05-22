@@ -22,6 +22,7 @@ FILE_DIR <- argIn[4]
 # resets the current RNG state as needed. The file seeding.RData contains
 # .Random.seed, the list currentQueue, and the function advanceQueue.
 load(file.path(FILE_DIR, 'seeding.RData'))
+load(file.path(FILE_DIR, 'currentMeans.RData'))
 
 # Convert output from reducing step (centroid totals formatted as plaintext
 # parsed R objects) into actual R object.
@@ -50,6 +51,7 @@ updateTotalList <- function(totalList, newVal, keyInt) {
   # update con totals
   totalList[[keyInt]]$con$totals <- (
     totalList[[keyInt]]$con$totals + newVal$con$totals)
+  # update cat totals
   for (i in 1:length(totalList[[keyInt]]$cat)) {
     totalList[[keyInt]]$cat[[i]] <- (
       totalList[[keyInt]]$cat[[i]] + newVal$cat[[i]])
@@ -70,7 +72,6 @@ while (length(line <- readLines(f,n=1)) > 0) {
   keysplit <- unlist(strsplit(this_kvtuple[1], split="\\."))
   key1 <- as.integer(keysplit[1])
   centroidTotals <- eval(parse(text=this_kvtuple[2]))
-  centroidCount <- centroidTotals$con$count
   # tally totals, counts
   myTotals <- updateTotalList(myTotals, centroidTotals, key1)
 }
@@ -97,6 +98,7 @@ for (i in 1:length(myTotals)) {
 
 # Calculate distance between these centroids and previous
 currentMeans <- myMeans
+currentKde <- kdeStats
 rm(myMeans)
 
 # load previous means. Yes, index of RData file is one plus the index of the
@@ -129,7 +131,8 @@ while( length(currentMeans) < lenPrevMeans ) {
 }
 
 myMeans <- currentMeans
-save(myMeans,file=file.path(FILE_DIR,'currentMeans.RData'))
+kdeStats <- currentKde
+save(myMeans,kdeStats,file=file.path(FILE_DIR,'currentMeans.RData'))
 
 # Save state of RNG and source of centroid vecs.
 # This is kind of clunky, but wrapping this save in a function treads on 

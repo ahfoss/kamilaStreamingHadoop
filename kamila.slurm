@@ -247,10 +247,6 @@ do
     
         echo Contents of $HADOOP_RES_DIR/run_$runNumber/iter_$i/stage1
         ls -lht ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/stage1
-        echo Concatenated histogram vectors:
-	# -t . option specifies . as delimiter
-	# -kx,xn specifies numeric sort in field x
-        #cat ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/stage1/part-* | sort -t . -k1,1n -k2,2n
 
 	# Calculate radial KDE
         cat ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/stage1/part-* | sort -t . -k1,1n -k2,2n | Rscript R/kamila/kamila_intermediary_1.R $TMP_DIR
@@ -284,7 +280,7 @@ do
 	# -t . option specifies . as delimiter
 	# -kx,xn specifies numeric sort in field x
         cat ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/stage2/part-* | sort -t . -k1,1n -k2,2n
-      
+
         # Run script on output; kamila_intermediary_2.R outputs currentMeans.RData, as well
         # as the objective function for the current iteration.
 
@@ -323,10 +319,6 @@ do
     # end of this kamila iter
     done
 
-############################################################
-## Updated from kmeans to kamila up to here ################
-############################################################
-    
     ##################################################
     echo "Summary stats M-R run:"
     ##################################################
@@ -335,9 +327,9 @@ do
     # sum of squares, and final cluster counts.
     #
     # M: calc cluster memberships
-    #    squared euclidean distance for each point
     # R: cluster counts
-    #    w/in cluster SS
+    #    min, total, count, max for continuous
+    #    cell counts for categorical
     #
     ##################################################
     $HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR \
@@ -345,29 +337,31 @@ do
       -D mapred.map.tasks=$NUM_MAP \
       -D mapred.reduce.tasks=$NUM_REDUCE \
       -D mapred.text.key.comparator.options="-n" \
-      -mapper "$RBIN_HOME/Rscript $PWD/R/kamila/kamila_summary_mapper.R $NUM_CHUNK" \
+      -mapper "$RBIN_HOME/Rscript $PWD/R/kamila/kamila_mapper_2.R $NUM_CHUNK" \
       -reducer "$RBIN_HOME/Rscript $PWD/R/kamila/kamila_summary_reducer.R" \
       -input /data/"$DATANAME" \
       -output run_"$runNumber"/hadoop_stats \
       -file "$TMP_DIR"/currentMeans.RData 
-    
-    # tabulate and store summary stats
+
     mkdir ./$HADOOP_RES_DIR/run_$runNumber/stats/
     $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -get \
       run_"$runNumber"/hadoop_stats/part-* \
       ./$HADOOP_RES_DIR/run_$runNumber/stats/
+
+    ## save stats file
+    #echo  -e 'ClusterNumber\tClusterSize\tSSQ\tminvec\tsumvec\tmaxvec'  > \
+    #  ./$HADOOP_RES_DIR/run_$runNumber/stats/chunkStats.tsv
+    #cat ./$HADOOP_RES_DIR/run_$runNumber/stats/part-* | sort -t . -k1,1n -k2,2n \
+    #  >> ./$HADOOP_RES_DIR/run_$runNumber/stats/chunkStats.tsv
+    echo 
+    echo "Calculating summary stats from summary M-R run"
+    echo 
+    cat ./$HADOOP_RES_DIR/run_$runNumber/stats/part-* | Rscript ./R/kamila/kamila_summary_intermediary.R \
+      ./$HADOOP_RES_DIR/run_$runNumber/stats/
     
-    # save stats file
-    echo  -e 'ClusterNumber\tClusterSize\tSSQ\tminvec\tsumvec\tmaxvec'  > \
-      ./$HADOOP_RES_DIR/run_$runNumber/stats/chunkStats.tsv
-    cat ./$HADOOP_RES_DIR/run_$runNumber/stats/part-* | sort -t . -k1,1n -k2,2n \
-      >> ./$HADOOP_RES_DIR/run_$runNumber/stats/chunkStats.tsv
-    Rscript ./R/kamila/kamila_summary_intermediary.R \
-      ./$HADOOP_RES_DIR/run_$runNumber/stats/chunkStats.tsv \
-      ./$HADOOP_RES_DIR/run_$runNumber/stats/clusterStats.tsv
-    echo
-    echo "Show summary stats file contents:"
-    cat ./$HADOOP_RES_DIR/run_$runNumber/stats/clusterStats.tsv
+############################################################
+## Updated from kmeans to kamila up to here ################
+############################################################
     
     # calculate and store total pseudo log likelihood
     pseudoLogLik[$(($runNumber-1))]=`Rscript -e \
