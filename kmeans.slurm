@@ -56,9 +56,9 @@ NUM_REDUCE=14
 NUM_CHUNK=3
 
 # Number of initializations of the kmeans algorithm
-NUM_INIT=1
+NUM_INIT=2
 # Max number of iterations per initialization
-MAX_NITER=2
+MAX_NITER=3
 # Tolerance for determining convergence; see README.txt
 # Converted to float
 EPSILON=0.01

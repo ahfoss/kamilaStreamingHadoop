@@ -2,11 +2,11 @@
 
 # Calculate cluster-level means, multinomial thetas
 #
-# Input file: clust/chunk id, distance to centroid, data vec
-# 1.1 \t 3.425 \t datavec
-# 1.2 \t 2.744 \t datavec
-# 2.1 \t 6.257 \t datavec
-# 2.2 \t 3.362 \t datavec
+# Input file: clust/chunk id, distance to centroid, cat log lik, data vec
+# 1.1 \t 3.42 \t 2.99 \t datavec
+# 1.2 \t 2.74 \t 5.03 \t datavec
+# 2.1 \t 6.25 \t 2.28 \t datavec
+# 2.2 \t 3.36 \t 1.42 \t datavec
 # ...
 #
 # write out file:
@@ -37,6 +37,7 @@ makeSummaryObject <- function() {
     con = list(min=rep(Inf,numConVars), max=rep(-Inf,numConVars), totals=rep(0,numConVars)),
     cat = lapply(myMeans[[1]][['thetas']], FUN=function(elm) rep(0,length(elm))),
     totalDistToCentroid = 0,
+    totalCatLogLik = 0,
     count = 0
   ))
 }
@@ -44,11 +45,13 @@ makeSummaryObject <- function() {
 # Add vec to total; a poor man's mutator method for totalList, an object
 # initialized by makeSummaryObject(). Global assignment is used to avoid
 # passing the modified object.
-addVecToTotal <- function(newVec, newDist) {
+addVecToTotal <- function(newVec, newDist, newCatLogLik) {
   # update count
   totalList$count  <<- totalList$count + 1
   # update total distance to centroid
   totalList$totalDistToCentroid <<- totalList$totalDistToCentroid + newDist
+  # udpate total cat log lik
+  totalList$totalCatLogLik <<- totalList$totalCatLogLik + newCatLogLik
   # update continuous
   thisConVec <- newVec[1:numConVars]
   totalList$con$totals <<- totalList$con$totals + thisConVec
@@ -61,13 +64,14 @@ addVecToTotal <- function(newVec, newDist) {
   }
 }
 
-f <- file("stdin")
-open(f)
-
 # Print cluster summary info to stdout where Hadoop's machinery takes over.
 logClustInfo <- function(clusterNum, robj) {
   cat(clusterNum,'\t',paste(deparse(robj),collapse=''),'\n',sep='')
 }
+
+# Ingest data rows from stdin and process them.
+f <- file("stdin")
+open(f)
 
 last_key <- Inf
 
@@ -76,11 +80,12 @@ while(length(line <- readLines(f,n=1)) > 0) {
   this_kvtuple <- unlist(strsplit(line,split="\t"))
   this_key <- this_kvtuple[1]
   eucDist <- as.numeric(this_kvtuple[2])
-  dataVec <- as.numeric(unlist(strsplit(this_kvtuple[3],split=",")))
+  catLogLik <- as.numeric(this_kvtuple[3])
+  dataVec <- as.numeric(unlist(strsplit(this_kvtuple[4],split=",")))
 
   if (last_key == this_key) {
     # executed if still within same cluster
-    addVecToTotal(dataVec,eucDist)
+    addVecToTotal(dataVec,eucDist,catLogLik)
   } else { # executed when ending a cluster or starting the first
     if (last_key!=Inf) {
       # executed when ending a cluster

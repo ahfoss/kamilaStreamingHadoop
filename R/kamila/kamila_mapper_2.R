@@ -4,7 +4,7 @@
 # Read from file: current means
 # Read from stdin: full csv data set in Hadoop streaming framework
 # Output: two tab-delimited values: (1) key, and (2) comma delimited data
-# vector. The key is (nearest centroidid).(chunk id number), where
+# vector. The key is (selected centroid).(chunk id number), where
 # chunk id is an arbitrary integer that serves to split the reducer loads
 # among different nodes.
 
@@ -14,39 +14,8 @@ NUM_CHUNK <- as.numeric(argIn[1])
 # Load current centroid stats
 load('currentMeans.RData')
 
-# Evaluate multinomial PMF for one observation
-evalOneMultin <- function(obs,thet) thet[obs]
-
-# Evaluate multinomial over several PMFs
-# Generates matrix of Q x G probs (Q cat vars and G clusters) and then sums
-# log probs over columns to yield a numeric vector of length G with cluster-
-# specific log probs.
-evalAllMult <- function(dataVec, paramList) {
-  probMat <- sapply(
-    paramList,
-    function(elm) mapply(FUN=evalOneMultin, obs=dataVec, thet=elm[['thetas']])
-  )
-  clusterCatLogLiks <- apply(probMat, 2, FUN=function(col) sum(log(col)))
-  return(clusterCatLogLiks)
-}
-
-# Calculate a distance to a centroid and evaluate at kde. Call
-# kdeStats$resampler() from outside of the function scope.
-evalOneKde <- function(obs, cent) {
-  thisDist <- dist(rbind(cent, obs))
-  kdeStats$resampler(thisDist)
-}
-# Calculate distance to each centroid and evaluate at radialKDE
-evalAllKde <- function(dataVec, paramList, myKde) {
-  probVec <- sapply(
-    paramList,
-    function(elm) {
-      #mapply(FUN=evalOneKde, obs=dataVec, cent=elm[['centroid']])
-      evalOneKde(obs=dataVec, cent=elm[['centroid']])
-    }
-  )
-  return(log(probVec))
-}
+# load helper functions.
+source('helperFunctions.R') # load evalAllMult, evalAllKde
 
 if (!exists('myMeans') || !exists('kdeStats')) stop("Mean RData file not complete.")
 numClusts <- length(myMeans)

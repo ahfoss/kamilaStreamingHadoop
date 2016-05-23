@@ -57,9 +57,9 @@ NUM_REDUCE=16
 NUM_CHUNK=4
 
 # Number of initializations of the kamila algorithm
-NUM_INIT=1
+NUM_INIT=3
 # Max number of iterations per initialization
-MAX_NITER=1
+MAX_NITER=3
 # Tolerances for determining convergence; see README.txt
 # Converted to float
 EPSILON_CON=0.01
@@ -189,8 +189,8 @@ $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -ls /data
 ## kamila run. The best is chosen as the final
 ## partition.
 ##################################################
-# create a variable to store within cluster sum of squares
-declare -a pseudoLogLik
+# create an array to store quality of each run's clustering
+declare -a clusterQualityMetric
 
 # Initialize seed and associated objects for pseudorandom RNG
 mkdir $TMP_DIR
@@ -262,8 +262,9 @@ do
           -reducer "$RBIN_HOME/Rscript $PWD/R/kamila/kamila_reducer_2.R" \
           -input /data/"$DATANAME" \
           -output hadoop_output_r"$runNumber"_i"$i"/stage2 \
-          -file "$TMP_DIR"/currentMeans.RData
-    
+          -file "$TMP_DIR"/currentMeans.RData \
+	  -file "$PWD"/R/helperFunctions.R
+
         echo "-------list output ---"
         # Get name of current output file
         $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -ls hadoop_output_r"$runNumber"_i$i/stage2/
@@ -295,18 +296,28 @@ do
 	tail -1 $TMP_DIR/paramDiff.csv 
         cp $TMP_DIR/paramDiff.csv ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/currentObjective_i$(expr $i + 1).csv
         cp $TMP_DIR/currentMeans.RData ./$HADOOP_RES_DIR/run_$runNumber/iter_$i/currentMeans_i$(expr $i + 1).RData
-#      
+      
         # check if convergence criteria is met
 	paramDiffCon=`tail -1 $TMP_DIR/paramDiff.csv | awk -F',' '{print $2}'`
 	paramDiffCat=`tail -1 $TMP_DIR/paramDiff.csv | awk -F',' '{print $3}'`
 	regex='^[0-9]+([.][0-9]+)?$'
 	if ! [[ $paramDiffCon =~ $regex ]]
 	then
-	  echo "Error: paramDiffCon ("$paramDiffCon") is not a number" >&2; exit 1
+	  echo "Error: paramDiffCon ("$paramDiffCon") is not a number" >&2
+          echo "-------Stop hdfs and yarn ---"
+          $HADOOP_HOME/sbin/stop-all.sh
+          #### Clean up the working directories after job completion
+          $MH_HOME/bin/myhadoop-cleanup.sh
+	  exit 1
 	fi
 	if ! [[ $paramDiffCat =~ $regex ]]
 	then
-	  echo "Error: paramDiffCat ("$paramDiffCat") is not a number" >&2; exit 1
+	  echo "Error: paramDiffCat ("$paramDiffCat") is not a number" >&2
+          echo "-------Stop hdfs and yarn ---"
+          $HADOOP_HOME/sbin/stop-all.sh
+          #### Clean up the working directories after job completion
+          $MH_HOME/bin/myhadoop-cleanup.sh
+	  exit 1
 	fi
 
         if (( $(bc <<< "$paramDiffCon < $EPSILON_CON && $paramDiffCat < $EPSILON_CAT") ))
@@ -324,12 +335,12 @@ do
     ##################################################
     #
     # Final map-reduce run to calculate within cluster
-    # sum of squares, and final cluster counts.
+    # stats and final cluster stats.
     #
     # M: calc cluster memberships
     # R: cluster counts
-    #    min, total, count, max for continuous
-    #    cell counts for categorical
+    #    WSS, min, total, count, max for continuous
+    #    logLik, cell counts for categorical
     #
     ##################################################
     $HADOOP_HOME/bin/hadoop --config $HADOOP_CONF_DIR \
@@ -341,7 +352,8 @@ do
       -reducer "$RBIN_HOME/Rscript $PWD/R/kamila/kamila_summary_reducer.R" \
       -input /data/"$DATANAME" \
       -output run_"$runNumber"/hadoop_stats \
-      -file "$TMP_DIR"/currentMeans.RData 
+      -file "$TMP_DIR"/currentMeans.RData \
+      -file "$PWD"/R/helperFunctions.R
 
     mkdir ./$HADOOP_RES_DIR/run_$runNumber/stats/
     $HADOOP_HOME/bin/hdfs --config $HADOOP_CONF_DIR dfs -get \
@@ -363,11 +375,10 @@ do
 ## Updated from kmeans to kamila up to here ################
 ############################################################
     
-    # calculate and store total pseudo log likelihood
-    pseudoLogLik[$(($runNumber-1))]=`Rscript -e \
-      "sdat <- read.table('./$HADOOP_RES_DIR/run_$runNumber/stats/clusterStats.tsv',header=TRUE,sep='\t'); cat(sum(sdat[,'SSQ']))"`
-    echo "Total Pseudo Log Lik for this run is "${pseudoLogLik[$(($runNumber-1))]}
-    echo ${pseudoLogLik[$(($runNumber-1))]} > ./$HADOOP_RES_DIR/run_$runNumber/stats/totalPll.txt
+    # calculate and store cluster quality
+    clusterQualityMetric[$(($runNumber-1))]=`Rscript -e \
+      "load('./$HADOOP_RES_DIR/run_$runNumber/stats/finalRunStats.RData'); cat(runSummary[['clusterQualityMetric']])"`
+    echo "Clustering metric for this run is "${clusterQualityMetric[$(($runNumber-1))]}
     ##################################################
     echo "End of summary stats M-R run"
     ##################################################
@@ -382,9 +393,9 @@ do
 done
 rm -r $TMP_DIR
 
-# write out Pll values for all runs
+# write out cluster quality for all runs
 mkdir ./$HADOOP_RES_DIR/best_run
-echo ${pseudoLogLik[*]} > ./$HADOOP_RES_DIR/best_run/allPll.txt
+echo ${clusterQualityMetric[*]} > ./$HADOOP_RES_DIR/best_run/allClustQual.txt
 
 # gather and write out stats on first MR run to file
 FAIL_STATUS=`sed '/list output/q' $SLURM_OUTFILE | grep "Streaming Command Failed" | awk '{print $3}'`

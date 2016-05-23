@@ -47,6 +47,9 @@ updateTotalList <- function(totalList, newVal, keyInt) {
   # update total dist
   totalList[[keyInt]]$totalDistToCentroid <- (
     totalList[[keyInt]]$totalDistToCentroid + newVal$totalDistToCentroid)
+  # update total cat log lik
+  totalList[[keyInt]]$totalCatLogLik <- (
+    totalList[[keyInt]]$totalCatLogLik + newVal$totalCatLogLik)
   # update con stats
   totalList[[keyInt]]$con$totals <- (
     totalList[[keyInt]]$con$totals + newVal$con$totals)
@@ -80,6 +83,7 @@ clustSummary <- lapply(
     clusterInfo <- list()
     clusterInfo$count <- elm$count
     clusterInfo$totalDistToCentroid <- elm$totalDistToCentroid
+    clusterInfo$totalCatLogLik <- elm$totalCatLogLik
     clusterInfo$con$means <- elm$con$totals / elm$count
     clusterInfo$con$min <- elm$con$min
     clusterInfo$con$max <- elm$con$max
@@ -93,10 +97,32 @@ clustSummary <- lapply(
   }
 )
 
+#calculate overall internal metric of cluster quality
+summedDistToCentroid <- sum(sapply(
+  clustSummary,
+  function(elm) elm[['totalDistToCentroid']]
+))
+summedCatLogLik <- sum(sapply(
+  clustSummary,
+  function(elm) elm[['totalCatLogLik']]
+))
+clusterQualityMetric <- summedDistToCentroid * summedCatLogLik
+
+runSummary <- list(
+  clusterQualityMetric = clusterQualityMetric,
+  totalEucDistToCentroid = summedDistToCentroid,
+  totalCatLogLik = summedCatLogLik
+)
+
 cat('
 Cluster Summary Info:
 ')
 str(clustSummary)
 
-save(clustSummary,file=file.path(FILE_DIR,'finalRunStats.RData'))
+cat('
+Run Summary Info:
+')
+str(runSummary)
+
+save(clustSummary,runSummary,file=file.path(FILE_DIR,'finalRunStats.RData'))
 
