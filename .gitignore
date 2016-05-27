@@ -9,9 +9,12 @@ tmp_*/
 test-*.out
 kmeansResults-*.out
 kamilaResults-*.out
-Rnw/
-!Rnw/kmeansSummary.Rnw
-!Rnw/kamilaSummary.Rnw
+Rnw/k*Summary.*
+Rnw/figure/
+Rnw/framed.sty
+Rnw/texput.log
+Rnw/x.log
+!Rnw/k*Summary.Rnw
 db/
 preprocessingResults*.err
 preprocessingHLResults*.err
