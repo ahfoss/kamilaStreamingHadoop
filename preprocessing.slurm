@@ -1,6 +1,5 @@
 #!/bin/bash
-#SBATCH --error=preprocessingHLResults-%J.err
-#SBATCH --output=preprocessingHLResults-%J.out
+#SBATCH --output=preprocessingResults-%J.out
 #SBATCH --job-name=procJob
 #SBATCH --cpus-per-task=1
 #SBATCH --nodes=1
