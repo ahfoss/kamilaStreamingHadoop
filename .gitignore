@@ -20,3 +20,5 @@ preprocessingResults*.err
 preprocessingHLResults*.err
 preprocessingResults*.out
 preprocessingHLResults*.out
+my_*
+py/my_*
