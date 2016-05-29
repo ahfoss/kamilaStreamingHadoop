@@ -12,6 +12,14 @@ which leads to weights c = sqrt(1 / (2 - 1/I)).
 Usage: python py/preprocMixed.py DATA_FILE_NAME TYPE_FILE_NAME [optional integers]
   For consistency, we recommend naming the type file *_types.csv, where *
   denotes original file name.
+  
+Input:
+  [1] Input csv data file
+  [2] Two row csv file; first row is variable names matching input [1], second row
+      denotes variable type (C=continuous, D=discrete/categorical)
+  [3] optional integers denoting which variables in input [1] to drop; if none are
+      specified, all variables are used. Note that dropped variables must still
+      be included in input [2].
 
 Output:
   Note "*" denotes the original file name.
