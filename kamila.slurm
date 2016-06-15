@@ -57,6 +57,7 @@ NUM_MAP=16 #80
 # Number of reducers
 NUM_REDUCE=16 #80
 # The number of keys per cluster
+# Currently select so that NUM_CLUST x NUM_CHUNK > NUM_MAP and NUM_REDUCE
 NUM_CHUNK=3 #12
 
 # Number of initializations of the kamila algorithm
