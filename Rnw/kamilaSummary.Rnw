@@ -645,7 +645,7 @@ for (i in 1:length(catVarStats)) {
     xtable(
       catVarStats[[i]] ,
       digits = c(0,rep(3,ncol(catVarStats[[i]]))),
-      caption = paste('Cluster-specific stats for categorical variable ',i,', ',names(catVarStats)[i],'.',sep='')
+      caption = paste('Cluster-specific row percents for categorical variable ',i,', ',names(catVarStats)[i],'.',sep='')
     ),
     include.rownames = TRUE
   )
