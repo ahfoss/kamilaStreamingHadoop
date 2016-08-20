@@ -1,4 +1,11 @@
 # kmeansStreamingHadoop
+
+## Installation/Setup
+
+## Usage
+
+## Algorithm
+
 Lloyd's k-means algorithm and KAMILA written for MyHadoop on a SLURM batch scheduler.
 
 # kmeans algorithm
