@@ -195,7 +195,7 @@ for (i in 1:length(runDirs)) {
   # insert try catch run here:
   objValues[[i]] <- tryCatch(
     expr = read.table(objFileName,sep=",",header=TRUE),
-    error = function(e) return(NA)
+    error = function(e) return(NULL)
   )
 }
 
@@ -204,19 +204,26 @@ allRunInfo <- list()
 for (i in 1:length(runDirs)) {
   # Get total wss file pathways
   finalStatsFile <- list.files(
-    path = file.path('..',outputFileName,runDirs[i],'stats'),
-    pattern = 'finalRunStats.RData',
-    full.names = TRUE
+      path = file.path('..',outputFileName,runDirs[i],'stats'),
+      pattern = 'finalRunStats.RData',
+      full.names = TRUE
+    )
+  tryCatch(
+    expr = {
+      load(finalStatsFile)
+      allClusteringInfo[[i]] <- clustSummary
+      allRunInfo[[i]] <- runSummary
+    },
+    error = function(e) {
+      warning('Could not load "finalRunStats.RData" for run number ',i)
+    }
   )
-  load(finalStatsFile)
-  allClusteringInfo[[i]] <- clustSummary
-  allRunInfo[[i]] <- runSummary
-  #totalWssFileContents <- read.table(finalStatsFile)
-  #runInfo$wss[i] <- ifelse(
-  #  test = totalWssFileContents <= 0,
-  #  yes = NA,
-  #  no = totalWssFileContents
-  #)
+}
+if (length(allClusteringInfo) < nrow(runInfo)) {
+  allClusteringInfo[[nrow(runInfo)]] <- NA
+}
+if (length(allRunInfo) < nrow(runInfo)) {
+  allRunInfo[[nrow(runInfo)]] <- NA
 }
 
 # Get metrics of cluster quality
@@ -613,6 +620,7 @@ for (i in 1:length(catVarNames)) {
     split=','
   ))
   colnames(ithVar) <- ithNames
+  ithVar <- ithVar[,order(ithNames)]
   catVarStats[[catVarNames[i]]] <- ithVar
 }
 
@@ -654,6 +662,9 @@ for (i in 1:length(catVarStats)) {
 }
 @
 
+<<saveall>>=
+save.image('SummaryInfo.RData')
+@
 
 
 \end{document}

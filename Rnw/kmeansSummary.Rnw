@@ -91,7 +91,13 @@ subsampleData = '../csv/subsampled_2000_1987_HL_rmvna_norm.csv'
 <<fs,echo=FALSE>>=
 fileSize <- file.size(dataName)
 spl <- strsplit(dataName,split='norm')[[1]]
-rowlogName <- paste(spl[1],'rowlog',spl[2],sep='')
+# if more than one _norm, only split on last
+if (length(spl) > 2) {
+  baseSpl <- paste(spl[1:(length(spl)-1)],collapse='norm')
+} else {
+  baseSpl <- spl[1]
+}
+rowlogName <- paste(baseSpl,'rowlog',spl[length(spl)],sep='')
 nLines <- read.table(rowlogName,header=TRUE,sep=',')
 nLines <- nLines[1,2]
 @
@@ -103,11 +109,11 @@ The data file is \Sexpr{fileSize/1024^3} GiB and \Sexpr{fileSize/1000^3} GB (\Se
 #dataNameNoExt <- file_path_sans_ext(dataName)
 dataExt <- file_ext(dataName)
 #varInfo <- read.csv(paste(dataNameNoExt,'_stats.',dataExt,sep=''))
-conVarInfo <- read.csv(paste(spl[1],'constats.',dataExt,sep=''))
+conVarInfo <- read.csv(paste(baseSpl,'constats.',dataExt,sep=''))
 numConVar <- nrow(conVarInfo)
 outputFileName <- paste('output-kmeans-',JOBID,sep='')
 
-catVarInfo <- read.table(paste(spl[1],'catstats.',dataExt,sep=''),header=TRUE,sep='\t')
+catVarInfo <- read.table(paste(baseSpl,'catstats.',dataExt,sep=''),header=TRUE,sep='\t')
 levCounts <- as.numeric(unlist(strsplit(as.vector(catVarInfo$LevCounts),split=',')))
 levPcts <- levCounts / nLines * 100
 
