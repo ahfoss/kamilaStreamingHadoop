@@ -1,4 +1,4 @@
-# kmeansStreamingHadoop
+# kamilaStreamingHadoop
 
 This package implements KAMILA (KAy-means for MIxed LArge data) clustering methods written for a computing cluster using Hadoop on a SLURM batch scheduler.
 The method is specifically designed to handle mixed-type data sets consisting of both continuous and categorical variables.
