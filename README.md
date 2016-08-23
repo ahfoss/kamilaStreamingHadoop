@@ -1,19 +1,26 @@
 # kmeansStreamingHadoop
 
-Clustering very large mixed-type data sets with k-means and KAMILA. Mixed-type refers to combinations of continuous and categorical variables. This package implements Lloyd/Forgy's k-means and KAMILA (KAy-means for MIxed LArge data) clustering methods written for a computing cluster using Hadoop on a SLURM batch scheduler. For details about the KAMILA algorithm, see our paper in [*Machine Learning*](http://link.springer.com/article/10.1007/s10994-016-5575-7) and our forthcoming software paper.
+This package implements KAMILA (KAy-means for MIxed LArge data) clustering methods written for a computing cluster using Hadoop on a SLURM batch scheduler.
+The method is specifically designed to handle mixed-type data sets consisting of both continuous and categorical variables.
+Categorical variables do not need to be (and should not be) dummy coded, which leads to better performance and more efficient memory usage.
+For details about the KAMILA algorithm, see our paper in [*Machine Learning*](http://link.springer.com/article/10.1007/s10994-016-5575-7) and our forthcoming software paper.
 
 Rather than attempt a bloated "one size fits all" approach, we instead aim for a lightweight "one size fits some" approach that can serve as a starting point for crafting a solution that meets the user's particular needs.
 Our primary contribution is a Hadoop-based implementation of the novel KAMILA algorithm, and as such we do not focus here on developing detailed tools for data management.
 
+This package also includes an implementation of Lloyd's k-means algorithm.
+
 ## Dependencies
 
-The [Environment Modules](http://www.modules.sourceforge.net) package is used to manage packages and environment variables. This setup requires java 1.6.0\_22, hadoop 2.5.1, [myhadoop](https://github.com/glennklockwood/myhadoop/tree/v0.30b) 0.30b, R 3.0.0, and the SLURM workload manager 16.05.3.
+The [Environment Modules](http://www.modules.sourceforge.net) package is used to manage packages and environment variables.
+This setup requires java 1.6.0\_22, hadoop 2.5.1, [myhadoop](https://github.com/glennklockwood/myhadoop/tree/v0.30b) 0.30b, R 3.0.0, and the SLURM workload manager 16.05.3.
 
 ## KAMILA Setup: data structures
 
 Three data files are required to run KAMILA.
 The primary data file should be in csv format (with header row) and placed in the `csv` directory.
-Continuous variables should be numeric values, while categorical variables can take on any values (although consider coding them concisely using the integers 1:M, where M is the number of categorical levels).
+Continuous variables should be z-normalized numeric values, while categorical variables can take on any values (although consider coding them concisely using the integers 1:M, where M is the number of categorical levels).
+Using z-normalized continuous variables ensures that a sensible `EPSILON_CON` can be used (see below).
 A small subset of the rows (perhaps around 2000--5000 data points) should be randomly selected without replacement and placed in the same `csv` directory.
 Finally, a tsv file containing information on the categorical variables should be included in the `csv` directory.
 This tsv file should contain a header row and the following six columns, with each row corresponding to a categorical variable in the data set:
@@ -54,29 +61,33 @@ The remainder of the environment variables control the behavior of the KAMILA al
  - `EPSILON_CON` and `EPSILON_CAT`: Positive real; parameters controlling the stopping rule. The closer to zero the more stringent the rule and thus the more likely each initialization will simply run for `MAX_NITER` iterations. The run is stopped if the summed absolute deviation of the centroid parameters in both the continuous and categorical variables are less than `EPSILON_CON` and `EPSILON_CAT`, respectively, from one iteration to the next. A reasonable value is the total deviation you would accept in the estimated centroid parameters relative to the true parameters, which depends on the data and the user's analysis needs. See the software paper cited above for more information.
  - `RBIN_HOME`: Character; file path to `R`, e.g. `/home/blah/R/R-3.x.x/bin`.
 
+The batch script can be submitted from the terminal in the usual way to run KAMILA clustering:
+    $ sbatch kamila.slurm
+
 ## KAMILA Output files
 
-output files
-Rnw example file
+output files are stored in the directory `output-kamila-?`, where the `?` denotes the job submission number.
+Within this directory, the `best_run` directory contains the file `allClustQual.txt` which contains a list of the objective criterion values used to select the best run.
+Also within the `output-kamila?` directory, information on the ith run is stored in the `run_i` directory; within each run's directory the directory `iter_j` stores information on the jth run.
+The primary results file is `run_i/stats/finalRunStats.RData`, which contains two list objects: `runSummary` and `clustSummary`.
+The `iter_j` directories contain the centroids of the current run/iteration stored as an `RData` file, along with other output from the reducers for that iteration.
 
+The `runSummary` object contains overall summary statistics for the clustering: - `clusterQualityMetric`, the final quantity used to select the best solution over all the runs
+ - `totalEucDistToCentroid`, the total Euclidean distance from each continuous point to its centroid
+ - `totalCatLogLik`, the log-likelihood of the categorical centroids with respect to the categorical variables
 
-# kmeans algorithm
+The `clustSummary` list contains one slot for each cluster.
+Each cluster's slot contains a list of length five with the elements:
+ - `count`, the number of observations assigned to this cluster
+ - `totalDistToCentroid`, the total Euclidean distance from each member of the current cluster to the centroid (along the continuous variables only)
+ - `totalCatLogLik`, the log-likelihood of the categorical centroids of the current cluster with regard to the categorical variables
+ - `con`, means, minima, and maxima along each continuous variable for members of the current cluster
+ - `catfreq`, frequencies of observations of each level of each categorical variable within the current cluster. Frequencies are calculated by counting the number of observations at a particular level of a particular variable and dividing by the number of observations in the current cluster.
 
-R files necessary to implement a bare-bones k-means clustering on a csv file.
+The knitr document `Rnw/kamilaSummary.Rnw` provides example results that can be tabulated and plotted from these output objects.
+Note: see the [knitr documentation](http://yihui.name/knitr/) for more information on report generation using knitr.
 
-Input must be a csv file with the continuous variables to be clustered, and an RData file with the initialized cluster centers.
+## Example usage
 
-NOTE: Variables must be normalized to variance 1. This ensures that the kmeans algorithm is not unduly influenced by any of the variables, and also ensures that a single EPSILON threshold can be sensibly used to assess convergence based on the mean vectors.
-
-A k-means run terminates when MAX\_NITER number of iterations elapses, or when \sum\_g^G ||\mu\_g^{(t)} - \mu\_g^{(t-1)}||\_1 < EPSILON, where G is the number of clusters and t is an integer denoting the current iteration.
-
-If a cluster is found to be empty during a k-means run, it is re-initialized using the same selection strategy.
-
-kmeans.slurm gives an example batch submission script
-km\_mapper.r gives the map step
-km\_reducer.r gives the reduce step
-km\_intermediary.r is executed in between successive map-reduce pairs
 genData.r generates example data
-
-# kamila algorithm
 
