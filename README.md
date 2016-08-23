@@ -7,7 +7,7 @@ Our primary contribution is a Hadoop-based implementation of the novel KAMILA al
 
 ## Dependencies
 
-The [Environment Modules](modules.sourceforge.net) package is used to manage packages and environment variables. This setup requires java 1.6.0\_22, hadoop 2.5.1, [myhadoop](https://github.com/glennklockwood/myhadoop) 0.30b, R 3.0.0, and the SLURM workload manager 16.05.3.
+The [Environment Modules](www.modules.sourceforge.net) package is used to manage packages and environment variables. This setup requires java 1.6.0\_22, hadoop 2.5.1, [myhadoop](https://github.com/glennklockwood/myhadoop) 0.30b, R 3.0.0, and the SLURM workload manager 16.05.3.
 
 ## KAMILA Setup: data structures
 
@@ -36,7 +36,7 @@ The current script sets up [HDFS](https://hadoop.apache.org/docs/r2.5.2/hadoop-p
 The main SLURM batch submission script `kamila.slurm` should then be modified to fit your computing setup and data.
 Lines 12 through 75 are marked as the relevant user-specified options.
 Up to line 39 are options for the SLURM command `sbatch` which should be (un)commented and modified as needed.
-Consult the `sbatch` [documentation](slurm.schedmd.com/sbatch.html) for further information.
+Consult the `sbatch` [documentation](www.slurm.schedmd.com/sbatch.html) for further information.
 The remainder of the user-specified options are environment variables.
 The first three variables are the file names of the three data files described in the previous section:
  - `DATANAME`: The file name of the primary csv data file
