@@ -16,9 +16,26 @@ def printSqlTable(cursor):
 maxNumCatLev = 20
 overThreshLevName = 'Other'
 
-# parse input data file
-#inFileName = './csv/1987.csv'
+######################################
+# User-specified info
+######################################
 inFileName = './csv/smallMixed.csv'
+
+# list of variable names (any string), type ('real' for continuous or 'text'
+# for categorical), and whether the variable should be included or dropped
+# from the final data set (true for include, false otherwise).
+varInfo = [
+  ('Con1',    'real', True),
+  ('Disc1',    'text', True),
+  ('Con2',    'real', True),
+  ('Disc2',    'text', True),
+  ('Disc3',    'text', True),
+]
+######################################
+# End of user-specified info
+######################################
+
+# parse input data file
 fileParsed = os.path.splitext(inFileName)
 fileExt = fileParsed[1]
 filePath,fileBase = os.path.split(fileParsed[0])
@@ -29,45 +46,6 @@ sqlFileName = './db/' + fileBase + '.db'
 catStatsFileName = fileParsed[0] + '_KAM_rmvna_catstats.tsv'
 #conStatsFileName = fileParsed[0] + '_KAM_rmvna_constats' + fileParsed[1]
 
-# list of variable names, type, and include (true/false)
-varInfo = [
-  ('C1',    'real', True),
-  ('D1',    'text', True),
-  ('C2',    'real', True),
-  ('D2',    'text', True),
-  ('D3',    'text', True),
-]
-#varInfo = [
-#  ('Year',              'real',False),
-#  ('Month',             'text',True),
-#  ('DayofMonth',        'text',False),
-#  ('DayOfWeek',         'text',True),
-#  ('DepTime',           'real',True),
-#  ('CRSDepTime',        'real',True),
-#  ('ArrTime',           'real',False),
-#  ('CRSArrTime',        'real',False),
-#  ('UniqueCarrier',     'text',True),
-#  ('FlightNum',         'text',False),
-#  ('TailNum',           'text',False),
-#  ('ActualElapsedTime', 'real',True),
-#  ('CRSElapsedTime',    'real',True),
-#  ('AirTime',           'real',False),
-#  ('ArrDelay',          'real',False),
-#  ('DepDelay',          'real',False),
-#  ('Origin',            'text',True),
-#  ('Dest',              'text',False),
-#  ('Distance',          'real',False),
-#  ('TaxiIn',            'real',False),
-#  ('TaxiOut',           'real',False),
-#  ('Cancelled',         'text',True),
-#  ('CancellationCode',  'text',False),
-#  ('Diverted',          'text',False),
-#  ('CarrierDelay',      'real',False),
-#  ('WeatherDelay',      'real',False),
-#  ('NASDelay',          'real',False),
-#  ('SecurityDelay',     'real',False),
-#  ('LateAircraftDelay', 'real',False)
-#]
 allVarName = [ x[0] for x in varInfo ]
 allVarType = [ x[1] for x in varInfo ]
 activeVarBool = [ x[2] for x in varInfo ]
