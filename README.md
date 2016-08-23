@@ -1,6 +1,6 @@
 # kamilaStreamingHadoop
 
-This package implements KAMILA (KAy-means for MIxed LArge data) clustering methods written for a computing cluster using Hadoop on a SLURM batch scheduler.
+This package implements the KAMILA (KAy-means for MIxed LArge data) clustering method on a computing cluster using Hadoop and the SLURM batch scheduler.
 The method is specifically designed to handle mixed-type data sets consisting of both continuous and categorical variables.
 Categorical variables do not need to be (and should not be) dummy coded, which leads to better performance and more efficient memory usage.
 For details about the KAMILA algorithm, see our paper in [*Machine Learning*](http://link.springer.com/article/10.1007/s10994-016-5575-7) and our forthcoming software paper.
@@ -61,18 +61,38 @@ The remainder of the environment variables control the behavior of the KAMILA al
  - `EPSILON_CON` and `EPSILON_CAT`: Positive real; parameters controlling the stopping rule. The closer to zero the more stringent the rule and thus the more likely each initialization will simply run for `MAX_NITER` iterations. The run is stopped if the summed absolute deviation of the centroid parameters in both the continuous and categorical variables are less than `EPSILON_CON` and `EPSILON_CAT`, respectively, from one iteration to the next. A reasonable value is the total deviation you would accept in the estimated centroid parameters relative to the true parameters, which depends on the data and the user's analysis needs. See the software paper cited above for more information.
  - `RBIN_HOME`: Character; file path to `R`, e.g. `/home/blah/R/R-3.x.x/bin`.
 
-The batch script can be submitted from the terminal in the usual way to run KAMILA clustering:
+KAMILA clustering can be run by submitting the batch script to the SLURM scheduler in the usual way:
+
     $ sbatch kamila.slurm
 
 ## KAMILA Output files
 
-output files are stored in the directory `output-kamila-?`, where the `?` denotes the job submission number.
-Within this directory, the `best_run` directory contains the file `allClustQual.txt` which contains a list of the objective criterion values used to select the best run.
-Also within the `output-kamila?` directory, information on the ith run is stored in the `run_i` directory; within each run's directory the directory `iter_j` stores information on the jth run.
-The primary results file is `run_i/stats/finalRunStats.RData`, which contains two list objects: `runSummary` and `clustSummary`.
-The `iter_j` directories contain the centroids of the current run/iteration stored as an `RData` file, along with other output from the reducers for that iteration.
+Output files are stored in the directory `output-kamila-*`, where the `*` denotes the job submission number.
+The file structure is organized as follows:
 
-The `runSummary` object contains overall summary statistics for the clustering: - `clusterQualityMetric`, the final quantity used to select the best solution over all the runs
+    output-kamila-*/
+        best_run/
+        run_1/
+            stats/
+            iter_1/
+            iter_2/
+            iter_3/
+            ...
+        run_2/
+            stats/
+            iter_1/
+            iter_2/
+            ...
+        run_3/
+        ...
+
+The file `output-kamila-*/best_run/allClustQual.txt` contains a list of the objective criterion values used to select the best run.
+The directory `output-kamila-?/run_i` contains information on the ith run; within each run's directory the directory `iter_j` stores information on the jth run.
+The primary results files, `output-kamila-*/run_i/stats/finalRunStats.RData`, contain two list objects: `runSummary` and `clustSummary`.
+The `output-kamila-*/run_i/iter_j` directories contain the centroids of the current run/iteration stored as an `RData` file, along with other output from the reducers for that iteration.
+
+The `runSummary` object contains overall summary statistics for the clustering:
+ - `clusterQualityMetric`, the final quantity used to select the best solution over all the runs
  - `totalEucDistToCentroid`, the total Euclidean distance from each continuous point to its centroid
  - `totalCatLogLik`, the log-likelihood of the categorical centroids with respect to the categorical variables
 
