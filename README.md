@@ -7,7 +7,7 @@ Our primary contribution is a Hadoop-based implementation of the novel KAMILA al
 
 ## Dependencies
 
-The [Environment Modules](http://www.modules.sourceforge.net) package is used to manage packages and environment variables. This setup requires java 1.6.0\_22, hadoop 2.5.1, [myhadoop](https://github.com/glennklockwood/myhadoop) 0.30b, R 3.0.0, and the SLURM workload manager 16.05.3.
+The [Environment Modules](http://www.modules.sourceforge.net) package is used to manage packages and environment variables. This setup requires java 1.6.0\_22, hadoop 2.5.1, [myhadoop](https://github.com/glennklockwood/myhadoop/tree/v0.30b) 0.30b, R 3.0.0, and the SLURM workload manager 16.05.3.
 
 ## KAMILA Setup: data structures
 
