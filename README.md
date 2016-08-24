@@ -87,9 +87,9 @@ The file structure is organized as follows:
         ...
 
 The file `output-kamila-*/best_run/allClustQual.txt` contains a list of the objective criterion values used to select the best run.
-The directory `output-kamila-*/run_i` contains information on the ith run; within each run's directory the directory `iter_j` stores information on the jth run.
-The primary results files, `output-kamila-*/run_i/stats/finalRunStats.RData`, contain two list objects: `runSummary` and `clustSummary`.
-The `output-kamila-*/run_i/iter_j` directories contain the centroids of the current run/iteration stored as an `RData` file, along with other output from the reducers for that iteration.
+The directory `output-kamila-*/run_i/` contains information on the ith run; within each run's directory the directory `iter_j/` stores information on the jth run.
+The primary results files, `output-kamila-*/run_i/stats/finalRunStats.RData`, contain two `R` list objects: `runSummary` and `clustSummary`.
+The `output-kamila-*/run_i/iter_j/` directories contain the centroids of the current run/iteration stored as an `RData` file, along with other output from the reducers for that iteration.
 
 The `runSummary` object contains overall summary statistics for the clustering:
  - `clusterQualityMetric`, the final quantity used to select the best solution over all the runs
