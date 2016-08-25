@@ -13,7 +13,12 @@ mergeHists <- function(histList) {
 }
 
 # Evaluate multinomial PMF for one observation
-evalOneMultin <- function(obs,thet) thet[obs]
+evalOneMultin <- function(obs,thet) {
+  if (length(obs) != length(thet)) {
+    stop('Multinomial parameter vector is a different length than the data vector')
+  }
+  thet[obs]
+}
 
 # Evaluate multinomial over several PMFs
 # Generates matrix of Q x G probs (Q cat vars and G clusters) and then sums
@@ -31,6 +36,9 @@ evalAllMult <- function(dataVec, paramList) {
 # Calculate a distance to a centroid and evaluate at kde. Call
 # kdeStats$resampler() from outside of the function scope.
 evalOneKde <- function(obs, cent) {
+  if (length(obs) != length(cent)) {
+    stop('Continuous data vector is of different length than the centroid vector')
+  }
   thisDist <- dist(rbind(cent, obs))
   kdeStats$resampler(thisDist)
 }

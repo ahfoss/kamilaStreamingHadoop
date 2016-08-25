@@ -107,6 +107,8 @@ Each cluster's slot contains a list of length five with the elements:
 The knitr document `Rnw/kamilaSummary.Rnw` provides example results that can be tabulated and plotted from these output objects.
 Note: see the [knitr documentation](http://yihui.name/knitr/) for more information on report generation using knitr.
 
+For troubleshooting, stderr logs can be found in the directory `config-kamila-*/logs/userlogs/application_*/container_*/stderr`.
+
 ## Example usage
 
 In a linux terminal:
