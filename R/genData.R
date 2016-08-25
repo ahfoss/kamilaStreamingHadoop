@@ -4,10 +4,6 @@ require(mvtnorm)
 
 set.seed(2)
 
-
-# create data directory
-suppressWarnings(dir.create('csv'))
-
 # small mixed data set
 clustSize <- 5 * 10^3
 ndim <- 5

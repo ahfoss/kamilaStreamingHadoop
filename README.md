@@ -21,7 +21,7 @@ Three data files are required to run KAMILA.
 The primary data file should be in csv format (with header row) and placed in the `csv` directory.
 Continuous variables should be z-normalized numeric values, while categorical variables can take on any values (although consider coding them concisely using the integers 1:M, where M is the number of categorical levels).
 Using z-normalized continuous variables ensures that a sensible `EPSILON_CON` can be used (see below).
-A small subset of the rows (perhaps around 2000--5000 data points) should be randomly selected without replacement and placed in the same `csv` directory.
+A small subset of the *continuous* variables (perhaps around 2000--5000 data points) should be randomly selected without replacement and placed in the same `csv` directory.
 Finally, a tsv file containing information on the categorical variables should be included in the `csv` directory.
 This tsv file should contain a header row and the following six columns, with each row corresponding to a categorical variable in the data set:
  - VarName: Variable name
@@ -47,7 +47,7 @@ Consult the `sbatch` [documentation](http://www.slurm.schedmd.com/sbatch.html) f
 The remainder of the user-specified options are environment variables.
 The first three variables are the file names of the three data files described in the previous section:
  - `DATANAME`: The file name of the primary csv data file
- - `SUBSAMP_DATANAME`: The file name of the subsampled data file
+ - `SUBSAMP_DATANAME`: The file name of the subsampled continuous data file
  - `CATINFO_DATANAME`: The file name of the tsv file 
 The fourth variable, `DATADIR`, is the directory of the data files, i.e, the full path of the data file is `./$DATADIR/$DATANAME`.
 The remainder of the environment variables control the behavior of the KAMILA algorithm:
