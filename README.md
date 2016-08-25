@@ -109,5 +109,23 @@ Note: see the [knitr documentation](http://yihui.name/knitr/) for more informati
 
 ## Example usage
 
-genData.r generates example data
+In a linux terminal:
+    # Generate sample data
+    Rscript R/genData.R
+    
+    # Format the data, generate required metadata files
+    sh preprocessing.slurm
+    # or use:
+    # slurm preprocessing.slurm
+
+    # Cluster the data
+    slurm kamila.slurm
+    
+    # Generate a report on the clustering
+    cd Rnw/
+    # Modify JOBID variable in the section "User-Supplied Values" in
+    # kamilaSummary.Rnw to be the SLURM job ID used in kamila.slurm.
+    Rscript -e "require(knitr);knit('kamilaSummary.Rnw')"
+    pdflatex kamilaSummary.tex; pdflatex kamilaSummary.tex
+    evince kamilaSummary.pdf &
 

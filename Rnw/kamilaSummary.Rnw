@@ -29,22 +29,6 @@
     urlcolor=blue
 }
 
-\newcommand{\bs}[1]{\boldsymbol{#1}}
-\newcommand{\bx}{\boldsymbol{x}}
-
-
-
-% \tiny
-% \scriptsize
-% \footnotesize
-% \small
-% \normalsize
-% \large
-% \Large
-% \LARGE
-% \huge
-% \Huge 
-
 \begin{document}
 
 \maketitle
@@ -66,7 +50,6 @@ suppressMessages(library(xtable))
 suppressMessages(library(tools))
 suppressMessages(library(MASS)) # for ginv()
 suppressMessages(library(RSQLite)) # for ginv()
-#suppressMessages(library(ggplot2))
 sessionInfo()
 @
 
@@ -77,16 +60,12 @@ sessionInfo()
 Please specify the data set used and job number in the original .Rnw document:
 <<uservals>>=
 # The full data set file name
-dataName <- '../csv/1987_KAM_rmvna_norm.csv'
-dataBaseName <- '../db/1987.db'
-dataBaseTableName <- 'inputProc1'
+dataName <- '../csv/sample.csv'
+dataBaseName <- '../db/sample.db'
+dataBaseTableName <- 'finalDataSet'
 JOBID = '5463898'
 # A subsampled version of the data set suitable for plotting
-subsampleDataFile = '../csv/subsampled_2000_1987_KAM_rmvna_norm.csv'
-
-#1987_types.csv
-#1987_types_rmvcols.csv
-
+subsampleDataFile = '../csv/subsampled_2000_sample.csv'
 
 # Connect to the corresponding database
 sqlite <- dbDriver("SQLite")
@@ -102,20 +81,17 @@ dbListTables(currentDb)
 <<fs,echo=FALSE>>=
 fileSize <- file.size(dataName)
 spl <- strsplit(dataName,split='norm')[[1]]
-#rowlogName <- paste(spl[1],'rowlog',spl[2],sep='')
 nLines <- dbGetQuery(currentDb, paste("SELECT count(*) FROM", dataBaseTableName))
 nLines <- as.numeric(nLines)
 @
 
 The data file is \Sexpr{fileSize/1024^3} GiB and \Sexpr{fileSize/1000^3} GB (\Sexpr{fileSize} bytes), with \Sexpr{nLines} data lines.
 
-%%%%%%% Add info on missing vars from preprocessing step
 <<basicDataInfo,echo=FALSE>>=
 conVarInfo <- dbGetQuery(currentDb, paste("SELECT * FROM conStats"))
 numConVar <- nrow(conVarInfo)
 outputFileName <- paste('output-kamila-',JOBID,sep='')
 
-#catVarInfo <- read.table(paste(spl[1],'catstats.',dataExt,sep=''),header=TRUE,sep='\t')
 catVarInfo <- dbGetQuery(currentDb, paste("SELECT * FROM catSummary"))
 
 levCounts <- as.numeric(unlist(strsplit(as.vector(catVarInfo$LevCounts),split=',')))
@@ -584,13 +560,6 @@ lines(1:length(objValues[[best_run]][['catdiff']]),log(objValues[[best_run]][['c
 \caption[Objective function plot, log-scale]{Plot of log (base 10) of L1 distance between centroids in successive iterations. The final selected run is plotted in black, while other runs are plotted in gray.}
 \end{figure}
 
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% modified kmeans -> kamila up to here %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 \newpage
