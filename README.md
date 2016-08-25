@@ -19,7 +19,7 @@ This setup requires java 1.6.0\_22, hadoop 2.5.1, [myhadoop](https://github.com/
 
 Three data files are required to run KAMILA.
 The primary data file should be in csv format (with header row) and placed in the `csv` directory.
-Continuous variables should be z-normalized numeric values, while categorical variables can take on any values (although consider coding them concisely using the integers 1:M, where M is the number of categorical levels).
+Continuous variables should be z-normalized numeric values, while categorical variables must be coded using the integers 1:M, where M is the number of categorical levels for that variable.
 Using z-normalized continuous variables ensures that a sensible `EPSILON_CON` can be used (see below).
 A small subset of the *continuous* variables (perhaps around 2000--5000 data points) should be randomly selected without replacement and placed in the same `csv` directory.
 Finally, a tsv file containing information on the categorical variables should be included in the `csv` directory.

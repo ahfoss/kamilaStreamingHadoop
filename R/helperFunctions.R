@@ -14,8 +14,8 @@ mergeHists <- function(histList) {
 
 # Evaluate multinomial PMF for one observation
 evalOneMultin <- function(obs,thet) {
-  if (length(obs) != length(thet)) {
-    stop('Multinomial parameter vector is a different length than the data vector')
+  if (obs > length(thet)) {
+    stop('Categorical level is not included in multinomial parameter vector')
   }
   thet[obs]
 }

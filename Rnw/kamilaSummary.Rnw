@@ -60,12 +60,12 @@ sessionInfo()
 Please specify the data set used and job number in the original .Rnw document:
 <<uservals>>=
 # The full data set file name
-dataName <- '../csv/sample.csv'
+dataName <- '../csv/sample_KAM_rmvna_norm.csv'
 dataBaseName <- '../db/sample.db'
 dataBaseTableName <- 'finalDataSet'
-JOBID = '5463898'
+JOBID = '5761972'
 # A subsampled version of the data set suitable for plotting
-subsampleDataFile = '../csv/subsampled_2000_sample.csv'
+subsampleDataFile = '../csv/subsampled_2000_sample_KAM_rmvna_norm.csv'
 
 # Connect to the corresponding database
 sqlite <- dbDriver("SQLite")
@@ -79,8 +79,7 @@ dbListTables(currentDb)
 \subsection{Basic Dataset Information}
 
 <<fs,echo=FALSE>>=
-fileSize <- file.size(dataName)
-spl <- strsplit(dataName,split='norm')[[1]]
+fileSize <- file.info(dataName)$size
 nLines <- dbGetQuery(currentDb, paste("SELECT count(*) FROM", dataBaseTableName))
 nLines <- as.numeric(nLines)
 @
