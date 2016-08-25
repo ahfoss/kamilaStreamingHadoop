@@ -22,7 +22,7 @@ echo Sqlite3 tables created:
 echo
 sqlite3 db/sample.db ".tables"
 
-python py/subsampleSqlData.py ./db/"$BASEFILE".db finalDataSet 2000 ./csv/subsampled_2000_"$BASEFILE"_rmvna_norm.csv 'all'
+python py/subsampleSqlData.py ./db/"$BASEFILE".db finalDataSet 2000 ./csv/subsampled_2000_"$BASEFILE"_KAM_rmvna_norm.csv 'all'
 
 echo
 echo "All done!"
