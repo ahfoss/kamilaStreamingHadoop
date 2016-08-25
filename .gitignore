@@ -9,6 +9,7 @@ test-*.out
 kmeansResults-*.out
 kamilaResults-*.out
 Rnw/k*Summary.*
+Rnw/SummaryInfo.RData
 Rnw/figure/
 Rnw/framed.sty
 Rnw/texput.log
