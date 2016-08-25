@@ -1,6 +1,12 @@
 #!/usr/bin/python
 
-# Modify user-specified values below
+# A script that illustrates proper formatting of a dataset for use with the
+# kamila.slurm clustering program. Outputs the necessary files, and also
+# creates a sqlite3 data base which includes useful summary stats for
+# subsequent analysis of the KAMILA clustering.
+#
+# Instructions: modify user-specified values below.
+#
 # Usage: python py/preprocKamila.py
 
 import sqlite3 as sql
@@ -10,17 +16,10 @@ import csv
 import numpy as np
 from operator import itemgetter
 
-def printSqlTable(cursor):
-    print
-    print [x[0] for x in cursor.description]
-    for row in cursor.fetchall():
-        print row
-
-
 ######################################
 # User-specified info
 ######################################
-inFileName = './csv/smallMixed.csv'
+inFileName = './csv/sample.csv'
 
 # If a categorical variable has over maxNumCatLev levels, the remaining 
 # LEAST frequent levels will be replaced with the string overThreshLevName.
@@ -41,6 +40,13 @@ varInfo = [
 ######################################
 # End of user-specified info
 ######################################
+
+# Convenience function for printing sql tables
+def printSqlTable(cursor):
+    print
+    print [x[0] for x in cursor.description]
+    for row in cursor.fetchall():
+        print row
 
 # parse input data file
 fileParsed = os.path.splitext(inFileName)

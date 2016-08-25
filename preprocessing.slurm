@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --output=preprocessingResults-%J.out
-#SBATCH --job-name=procJob
+#SBATCH --job-name=samplePreproc
 #SBATCH --cpus-per-task=1
 #SBATCH --nodes=1
 ##SBATCH --mail-user=username@host.com
@@ -14,14 +14,17 @@ echo
 echo "Starting now..."
 echo
 
-BASEFILE=smallMixed
+BASEFILE=sample
 python py/preprocKamila.py
 
-#NLINES=`head -2 csv/"$BASEFILE"_KAM_rmvna_rowlog.csv | tail -1 | awk -F',' '{print $2}'`
-NLINES=666
-echo "NLINES is $NLINES"
+echo
+echo Sqlite3 tables created:
+echo
+sqlite3 db/sample.db ".tables"
 
-#python py/subsampleData.py csv/"$BASEFILE"_HL_rmvna_norm.csv $NLINES 1000
+python py/subsampleSqlData.py ./db/"$BASEFILE".db finalDataSet 2000 ./csv/subsampled_2000_"$BASEFILE".csv 'all'
 
+echo
 echo "All done!"
+echo
 
