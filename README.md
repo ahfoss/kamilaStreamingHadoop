@@ -110,12 +110,13 @@ Note: see the [knitr documentation](http://yihui.name/knitr/) for more informati
 ## Example usage
 
 In a linux terminal:
+
     # Generate sample data
     Rscript R/genData.R
     
-    # Format the data, generate required metadata files
+    # Format the data, generate required metadata files.
     sh preprocessing.slurm
-    # or use:
+    # Or use:
     # slurm preprocessing.slurm
 
     # Cluster the data
