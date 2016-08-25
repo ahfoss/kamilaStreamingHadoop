@@ -1,5 +1,8 @@
 #!/usr/bin/python
 
+# Modify user-specified values below
+# Usage: python py/preprocKamila.py
+
 import sqlite3 as sql
 import sys
 import os
@@ -13,23 +16,27 @@ def printSqlTable(cursor):
     for row in cursor.fetchall():
         print row
 
-maxNumCatLev = 20
-overThreshLevName = 'Other'
 
 ######################################
 # User-specified info
 ######################################
 inFileName = './csv/smallMixed.csv'
 
-# list of variable names (any string), type ('real' for continuous or 'text'
-# for categorical), and whether the variable should be included or dropped
+# If a categorical variable has over maxNumCatLev levels, the remaining 
+# LEAST frequent levels will be replaced with the string overThreshLevName.
+maxNumCatLev = 20
+overThreshLevName = 'Other'
+
+# list of tuples:
+# 1) variable names (any string), 2) type ('real' for continuous or 'text'
+# for categorical), and 3) whether the variable should be included or dropped
 # from the final data set (true for include, false otherwise).
 varInfo = [
-  ('Con1',    'real', True),
-  ('Disc1',    'text', True),
-  ('Con2',    'real', True),
-  ('Disc2',    'text', True),
-  ('Disc3',    'text', True),
+  ('Con1',  'real', True),
+  ('Disc1', 'text', True),
+  ('Con2',  'real', True),
+  ('Disc2', 'text', True),
+  ('Disc3', 'text', True),
 ]
 ######################################
 # End of user-specified info
@@ -42,7 +49,8 @@ filePath,fileBase = os.path.split(fileParsed[0])
 
 # create outfile names
 outFileName = fileParsed[0] + "_KAM_rmvna_norm" + fileParsed[1]
-sqlFileName = './db/' + fileBase + '.db'
+dataBaseDirName = './db/'
+sqlFileName = dataBaseDirName + fileBase + '.db'
 catStatsFileName = fileParsed[0] + '_KAM_rmvna_catstats.tsv'
 #conStatsFileName = fileParsed[0] + '_KAM_rmvna_constats' + fileParsed[1]
 
@@ -64,6 +72,8 @@ print "Used categorical: " + str(activeTextName)
 print "Maximum allowed number of categorical levels: " + str(maxNumCatLev)
 print
 
+if not os.path.exists(dataBaseDirName):
+    os.makedirs(dataBaseDirName)
 try:
     os.remove(sqlFileName)
 except OSError:
@@ -83,10 +93,12 @@ with con:
     print "SQLite version: %s" % versionInfo
 
     # Initialize data table
-    cur.execute('CREATE TABLE rawInput(' +
+    commandStr1 = ('CREATE TABLE rawInput(' +
         ','.join([x+' '+y for x,y in zip(activeVarName,activeVarType) ]) +
         ')'
     )
+    cur = con.cursor()
+    cur.execute(commandStr1)
 
     # open csv
     with open(inFileName, 'r') as inFile:

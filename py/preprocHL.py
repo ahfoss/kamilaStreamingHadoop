@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 documentation = '''
-Insert general description here.
+DEPRECATED
+Preprocessing script for Hennig-Liao coding of categorical variables.
 
 We use dummy coding as described in Hennig & Liao, (2013), JRSS-C 62(3),
 309--369, equation 6.1, with the recommended assumtions of level
