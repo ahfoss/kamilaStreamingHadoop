@@ -127,6 +127,7 @@ In a linux terminal:
     # Modify JOBID variable in the section "User-Supplied Values" in
     # kamilaSummary.Rnw to be the SLURM job ID used in kamila.slurm.
     Rscript -e "require(knitr);knit('kamilaSummary.Rnw')"
-    pdflatex kamilaSummary.tex; pdflatex kamilaSummary.tex
+    pdflatex kamilaSummary.tex
+    !!
     evince kamilaSummary.pdf &
 
